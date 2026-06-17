@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<!--
+  S13 — File detail — Documents & uploads — v3
+  ===============================================
+  Design rationale (~200 words):
+
+  Layout: LWR Single-Column inside the file-detail tab structure. Top of the
+  tab is a full-width multi-file drop zone (OOtB lightning-file-upload with a
+  FlexCard wrapper for category tagging), followed by an in-progress strip
+  for any active uploads, then a documents grid. A grid/list view toggle
+  sits top-right; the grid view is the default.
+
+  Each document card shows: thumbnail icon (coloured by file type), file
+  name (truncated), category tag (QP9, Affidavit, Court order, Identity,
+  Financial), size, uploaded-by avatar, uploaded-at timestamp, and a kebab
+  menu for download / rename / delete / change category. A single error
+  card is shown to cover the upload-failure state.
+
+  Click a card to open an inline preview pane (PDF/image). On narrow
+  screens the preview opens as a modal. Category filtering is a chip strip
+  above the grid.
+
+  Build approach: the list, grid, preview and filter chips are all OOtB
+  Experience Cloud components. Category tagging is a lightweight FlexCard
+  because categories are an LAQ taxonomy, not the generic object metadata.
+
+  Accessibility: drop zone has role="button" and keyboard activation;
+  upload progress bars expose aria-valuenow; the view toggle is a
+  radiogroup; error cards have role="alert".
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Documents — Q-2024-001847 — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --teal: #0F8291;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+    --error: #C0392B; --error-bg: #FDECEB; --error-border: #F5BDBA;
+    --success: #1E7E34; --success-bg: #EBF5EB;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1,h2 { margin: 0; }
+
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; position: relative; }
+  .icon-btn .count { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #C0392B; border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; text-decoration: none; color: var(--text); }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .annot.ootb { background: #E6F4EA; color: #1E7E34; }
+  .annot.flexcard { background: #F0E6FF; color: #6B21A8; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 1400px; margin: 0 auto; }
+
+  .crumb { padding: 10px 24px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-light); background: var(--surface); }
+  .crumb a { color: var(--sapphire); text-decoration: underline; }
+  .crumb .q { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text); }
+
+  .highlights-mini { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .hi-title { display: flex; align-items: center; gap: 12px; border-left: 4px solid var(--navy); padding-left: 14px; }
+  .hi-title h1 { font-size: 18px; font-weight: 800; color: var(--navy); }
+  .hi-q { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text-muted); font-size: 12px; }
+
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: #fff; padding: 0 24px; }
+  .tab { padding: 12px 18px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-size: 13px; cursor: pointer; font-family: inherit; margin-bottom: -1px; text-decoration: none; }
+  .tab[aria-selected="true"] { border-bottom-color: var(--navy); color: var(--navy); font-weight: 700; }
+
+  .content { padding: 20px 24px 40px; }
+
+  /* Dropzone */
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 4px;
+    background: var(--surface); padding: 28px; margin-bottom: 20px;
+    display: flex; gap: 20px; align-items: center; cursor: pointer;
+  }
+  .dropzone:hover { border-color: var(--sapphire); background: #F1F7FD; }
+  .dropzone-icon { width: 48px; height: 48px; color: var(--sapphire); flex-shrink: 0; }
+  .dropzone-copy { flex: 1; }
+  .dropzone-copy strong { display: block; font-size: 15px; color: var(--text); margin-bottom: 2px; }
+  .dropzone-copy span { font-size: 12px; color: var(--text-muted); }
+  .dropzone-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+  .btn { height: 36px; padding: 0 16px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+
+  /* In-progress uploads */
+  .upload-list { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .upload-row {
+    background: #fff; border: 1px solid var(--border); border-radius: 3px;
+    padding: 10px 14px; display: flex; align-items: center; gap: 12px;
+  }
+  .upload-row.error { border-color: var(--error-border); background: var(--error-bg); }
+  .upload-row svg { flex-shrink: 0; }
+  .upload-row .name { flex: 1; font-size: 13px; }
+  .upload-row .progress { width: 120px; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden; }
+  .upload-row .progress-fill { height: 100%; background: var(--sapphire); border-radius: 2px; }
+  .upload-row .pct { font-size: 11px; color: var(--text-muted); min-width: 32px; text-align: right; }
+  .upload-row .error-text { font-size: 12px; color: var(--error); font-weight: 600; }
+
+  /* Toolbar */
+  .doc-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .chip { padding: 5px 12px; background: #fff; border: 1px solid var(--border); border-radius: 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; font-family: inherit; }
+  .chip.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 700; }
+  .view-toggle { margin-left: auto; display: flex; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+  .view-toggle button { background: #fff; border: none; cursor: pointer; padding: 6px 10px; color: var(--text-muted); font-family: inherit; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+  .view-toggle button[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 700; }
+
+  /* Grid */
+  .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .doc-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .doc-card:hover { border-color: var(--sapphire); box-shadow: 0 3px 10px rgba(9,84,159,0.08); }
+  .doc-thumb {
+    width: 100%; height: 100px;
+    background: var(--surface); border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px; color: var(--text-muted);
+    position: relative;
+  }
+  .doc-thumb.pdf { background: #FDECEB; color: #C0392B; }
+  .doc-thumb.doc { background: var(--info-bg); color: var(--sapphire); }
+  .doc-thumb.img { background: var(--success-bg); color: var(--success); }
+  .doc-thumb .file-ext { position: absolute; bottom: 6px; right: 6px; font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.85); padding: 2px 6px; border-radius: 2px; letter-spacing: 0.04em; }
+  .doc-name { font-size: 13px; font-weight: 600; line-height: 1.3; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .doc-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+  .cat-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 2px; background: #F0E6FF; color: #6B21A8; letter-spacing: 0.04em; }
+  .cat-tag.id { background: #E8ECF5; color: var(--navy); }
+  .cat-tag.court { background: #FEF3E2; color: #8A4500; }
+  .cat-tag.fin { background: #EBF5EB; color: var(--success); }
+  .cat-tag.aff { background: var(--info-bg); color: var(--sapphire); }
+  .doc-foot { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+  .kebab-mini { margin-left: auto; background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-muted); font-size: 14px; }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 40px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+    </a>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="S22_notifications.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="count">2</span></a>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html" aria-current="page">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="crumb">
+      <a href="S10_my_files.html">My files</a>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <a href="S11_file_detail.html"><span class="q">Q-2024-001847</span></a>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span>Documents</span>
+    </div>
+
+    <div class="highlights-mini">
+      <div class="hi-title">
+        <h1>Sarah Mitchell</h1>
+        <span class="hi-q">Q-2024-001847</span>
+      </div>
+      <span class="annot ootb">⚡ OOtB: lightning-file-upload + Files Related List</span>
+    </div>
+
+    <div class="tabs">
+      <a class="tab" href="S11_file_detail.html">Summary</a>
+      <a class="tab" href="S12_correspondence.html">Correspondence</a>
+      <a class="tab" aria-selected="true">Documents</a>
+      <a class="tab">Invoices</a>
+      <a class="tab" href="S14_outcomes.html">Outcomes</a>
+      <a class="tab">Activity</a>
+    </div>
+
+    <div class="content">
+
+      <!-- Drop zone -->
+      <div class="dropzone" role="button" tabindex="0" aria-label="Upload documents — drop files or browse">
+        <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div class="dropzone-copy">
+          <strong>Drop documents here or browse</strong>
+          <span>PDF, DOCX, JPEG, PNG · max 20 MB each · tag a category on upload</span>
+        </div>
+        <div class="dropzone-actions">
+          <span class="annot flexcard">🃏 FlexCard: Category tagger</span>
+          <button class="btn btn-primary">Browse files</button>
+        </div>
+      </div>
+
+      <!-- In-progress uploads -->
+      <div class="upload-list" aria-live="polite">
+        <div class="upload-row">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--sapphire)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="name">Centrelink_advice_April.pdf</span>
+          <div class="progress"><div class="progress-fill" style="width:74%;" role="progressbar" aria-valuenow="74" aria-valuemin="0" aria-valuemax="100"></div></div>
+          <span class="pct">74%</span>
+          <span class="cat-tag fin">Financial</span>
+        </div>
+        <div class="upload-row error" role="alert">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span class="name">Hearing_notes_draft_v2.docx</span>
+          <span class="error-text">Upload failed — file exceeds 20 MB limit</span>
+          <button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:12px;">Retry</button>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="doc-toolbar">
+        <button class="chip active">All (12)</button>
+        <button class="chip">QP9 (1)</button>
+        <button class="chip">Affidavit (3)</button>
+        <button class="chip">Court order (2)</button>
+        <button class="chip">Identity (2)</button>
+        <button class="chip">Financial (3)</button>
+        <button class="chip">Other (1)</button>
+
+        <div class="view-toggle" role="radiogroup" aria-label="View">
+          <button aria-pressed="true" role="radio">⊞ Grid</button>
+          <button aria-pressed="false" role="radio">☰ List</button>
+        </div>
+      </div>
+
+      <!-- Grid -->
+      <div class="doc-grid">
+
+        <div class="doc-card" tabindex="0">
+          <div class="doc-thumb pdf">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="file-ext">PDF</span>
+          </div>
+          <div class="doc-name">QP9_Form_Mitchell.pdf</div>
+          <div class="doc-meta"><span class="cat-tag">QP9</span><span>340 KB</span></div>
+          <div class="doc-foot"><span class="avatar" style="width:20px;height:20px;font-size:8px;">JH</span><span>J. Halloran · 12 Apr 2026</span><button class="kebab-mini" aria-label="Actions">⋮</button></div>
+        </div>
+
+        <div class="doc-card" tabindex="0">
+          <div class="doc-thumb doc">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+            <span class="file-ext">DOCX</span>
+          </div>
+          <div class="doc-name">Affidavit_Mitchell_draft_v3.docx</div>
+          <div class="doc-meta"><span class="cat-tag aff">Affidavit</span><span>128 KB</span></div>
+          <div class="doc-foot"><span class="avatar" style="width:20px;height:20px;font-size:8px;background:#6B21A8;">RN</span><span>R. Nguyen · 18 Apr 2026</span><button class="kebab-mini" aria-label="Actions">⋮</button></div>
+        </div>
+
+        <div class="doc-card" tabindex="0">
+          <div class="doc-thumb pdf">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="file-ext">PDF</span>
+          </div>
+          <div class="doc-name">Initial_orders_10Jan2026.pdf</div>
+          <div class="doc-meta"><span class="cat-tag court">Court order</span><span>220 KB</span></div>
+          <div class="doc-foot"><span class="avatar" style="width:20px;height:20px;font-size:8px;">JH</span><span>J. Halloran · 10 Jan 2026</span><button class="kebab-mini" aria-label="Actions">⋮</button></div>
+        </div>
+
+        <div class="doc-card" tabindex="0">
+          <div class="doc-thumb img">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span class="file-ext">JPG</span>
+          </div>
+          <div class="doc-name">Drivers_licence_Mitchell.jpg</div>
+          <div class="doc-meta"><span class="cat-tag id">Identity</span><span>1.2 MB</span></div>
+          <div class="doc-foot"><span class="avatar" style="width:20px;height:20px;font-size:8px;">JH</span><span>J. Halloran · 10 Jan 2026</span><button class="kebab-mini" aria-label="Actions">⋮</button></div>
+        </div>
+
+        <div class="doc-card" tabindex="0">
+          <div class="doc-thumb pdf">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="file-ext">PDF</span>
+          </div>
+          <div class="doc-name">Centrelink_advice_March.pdf</div>
+          <div class="doc-meta"><span class="cat-tag fin">Financial</span><span>98 KB</span></div>
+          <div class="doc-foot"><span class="avatar" style="width:20px;height:20px;font-size:8px;">JH</span><span>J. Halloran · 02 Apr 2026</span><button class="kebab-mini" aria-label="Actions">⋮</button></div>
+        </div>
+
+        <div class="doc-card" tabindex="0">
+          <div class="doc-thumb doc">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="file-ext">DOCX</span>
+          </div>
+          <div class="doc-name">Authority_school_records.pdf</div>
+          <div class="doc-meta"><span class="cat-tag id">Identity</span><span>240 KB</span></div>
+          <div class="doc-foot"><span class="avatar" style="width:20px;height:20px;font-size:8px;">JH</span><span>J. Halloran · Today</span><button class="kebab-mini" aria-label="Actions">⋮</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

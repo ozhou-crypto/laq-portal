@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<!--
+  S18 — Invoice list & cancel invoice — v3
+  ===========================================
+  Design rationale (~200 words):
+
+  Layout: LWR Single-Column with a full-width list. The list is an OOtB
+  Record List bound to the Disbursement / Invoice__c object with the six
+  columns required by the brief: Invoice #, File / Q-number, Submitted,
+  Amount, Status, Payment date.
+
+  Status badges cover all seven states (Submitted, Under review, Approved,
+  Paid, Reduced, Refused, Cancelled), each with an icon-dot + literal text
+  so they never rely on colour alone.
+
+  The Cancel action is a row-level kebab action that opens a cancel modal.
+  Cancelling is disabled for invoices in a blocked state (Paid, Reduced) —
+  the kebab on those rows shows a tooltip explaining why. The cancel modal
+  captures a reason code (dropdown), free-text detail, and a confirmation
+  tick — all audit-logged on submit.
+
+  Filter chips above the list scope by status. A secondary "Submit invoice"
+  CTA at the top right matches the page's role as the single place where
+  invoices are managed. Filter counts update live from the table.
+
+  Accessibility: kebab actions are keyboard-operable; the cancel modal
+  uses role="dialog" with focus trap; disabled actions use aria-disabled
+  with a tooltip rather than being hidden.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Invoices — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --teal: #0F8291;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+    --success: #1E7E34; --success-bg: #EBF5EB;
+    --warning: #8A4500; --warning-bg: #FEF3E2;
+    --error: #C0392B; --error-bg: #FDECEB;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1,h2 { margin: 0; }
+
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; position: relative; }
+  .icon-btn .count { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #C0392B; border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; text-decoration: none; color: var(--text); }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; background: #E6F4EA; color: #1E7E34; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .page-head h1 { font-size: 20px; font-weight: 800; color: var(--navy); display: inline-flex; align-items: center; gap: 10px; }
+
+  .btn { height: 38px; padding: 0 18px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-destructive { background: #fff; color: var(--error); border: 1px solid var(--error); font-weight: 700; }
+
+  .filter-strip { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .chip { padding: 5px 12px; background: #fff; border: 1px solid var(--border); border-radius: 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; font-family: inherit; }
+  .chip.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 700; }
+  .chip:hover:not(.active) { background: var(--surface); color: var(--text); }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+  .dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dt thead tr { background: var(--surface); border-bottom: 1px solid var(--border-light); }
+  .dt th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; white-space: nowrap; }
+  .dt tbody tr { border-bottom: 1px solid var(--border-light); }
+  .dt tbody tr:hover { background: var(--surface); }
+  .dt tbody tr:last-child { border-bottom: none; }
+  .dt td { padding: 12px 14px; vertical-align: middle; }
+  .td-invoice { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--sapphire); font-weight: 600; }
+  .td-q { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text-muted); font-size: 12px; }
+  .td-amount { font-weight: 600; white-space: nowrap; }
+  .td-muted { font-size: 12px; color: var(--text-muted); }
+  .td-light { color: var(--text-light); }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .badge.submitted { background: var(--info-bg); color: var(--sapphire); border: 1px solid var(--info-border); }
+  .badge.submitted .dot { background: var(--sapphire); }
+  .badge.review { background: var(--warning-bg); color: var(--warning); border: 1px solid #F5C06E; }
+  .badge.review .dot { background: var(--warning); }
+  .badge.approved { background: var(--success-bg); color: var(--success); border: 1px solid #A3D9A5; }
+  .badge.approved .dot { background: var(--success); }
+  .badge.paid { background: var(--success-bg); color: var(--success); border: 1px solid #A3D9A5; }
+  .badge.paid .dot { background: var(--success); }
+  .badge.reduced { background: #FFF3E0; color: #B26A00; border: 1px solid #F5C06E; }
+  .badge.reduced .dot { background: #B26A00; }
+  .badge.refused { background: var(--error-bg); color: var(--error); border: 1px solid #F5BDBA; }
+  .badge.refused .dot { background: var(--error); }
+  .badge.cancelled { background: #F4F6F9; color: #5C6B7A; border: 1px solid #5C6B7A22; }
+  .badge.cancelled .dot { background: #5C6B7A; }
+
+  .kebab { background: none; border: none; cursor: pointer; padding: 6px; color: var(--text-muted); font-size: 16px; border-radius: 3px; }
+  .kebab:hover { background: var(--surface); color: var(--text); }
+  .kebab[aria-disabled="true"] { cursor: not-allowed; opacity: 0.4; }
+  .actions-cell { width: 40px; text-align: right; }
+
+  /* Cancel modal */
+  .scrim { position: fixed; inset: 0; background: rgba(5,31,58,0.55); display: flex; align-items: center; justify-content: center; padding: 24px 16px; z-index: 1000; }
+  .modal { background: #fff; width: 100%; max-width: 520px; border-radius: 4px; box-shadow: 0 16px 48px rgba(0,0,0,0.35); overflow: hidden; }
+  .modal-stripe { background: var(--error); height: 4px; }
+  .modal-head { padding: 18px 24px 12px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal-head h2 { font-size: 17px; font-weight: 800; color: var(--navy); }
+  .modal-body { padding: 18px 24px; }
+  .modal-foot { padding: 14px 24px; border-top: 1px solid var(--border-light); background: #FAFBFC; display: flex; justify-content: space-between; gap: 8px; }
+  .close-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-muted); font-size: 20px; line-height: 1; }
+
+  .ctx-compact { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; display: grid; grid-template-columns: 100px 1fr; gap: 6px 10px; }
+  .ctx-compact dt { color: var(--text-muted); }
+  .ctx-compact dd { font-weight: 600; }
+
+  .fld { margin-bottom: 12px; }
+  .fld label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+  .req { color: var(--error); }
+  .input, select.input, textarea.input { width: 100%; height: 36px; border: 1px solid var(--border); border-radius: 3px; padding: 0 10px; font-size: 13px; outline: none; font-family: inherit; background: #fff; }
+  textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
+  .input:focus { border-color: var(--sapphire); box-shadow: 0 0 0 3px var(--info-bg); }
+  .cb-row { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; padding: 10px 12px; background: var(--error-bg); border: 1px solid #F5BDBA; border-radius: 3px; }
+  .cb-row input { margin-top: 2px; width: 15px; height: 15px; accent-color: var(--error); }
+
+  .hidden { display: none !important; }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 40px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+    </a>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="S22_notifications.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="count">2</span></a>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html" aria-current="page">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="page-head">
+      <h1>Invoices <span class="annot">⚡ OOtB: Record List</span></h1>
+      <a class="btn btn-primary" href="S17_submit_invoice.html">+ Submit invoice</a>
+    </div>
+
+    <div class="filter-strip">
+      <button class="chip active">All (12)</button>
+      <button class="chip">Submitted (2)</button>
+      <button class="chip">Under review (1)</button>
+      <button class="chip">Approved (1)</button>
+      <button class="chip">Paid (6)</button>
+      <button class="chip">Refused (1)</button>
+      <button class="chip">Cancelled (1)</button>
+    </div>
+
+    <div class="card">
+      <table class="dt">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>File / Q-number</th>
+            <th>Submitted</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Payment date</th>
+            <th class="actions-cell"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-invoice">INV-2026-0018</td>
+            <td><a href="S11_file_detail.html" style="color:var(--sapphire);font-weight:600;text-decoration:none;">Sarah Mitchell</a><div class="td-q">Q-2024-001847</div></td>
+            <td class="td-muted">25 Apr 2026</td>
+            <td class="td-amount">AUD 2,340.00</td>
+            <td><span class="badge submitted"><span class="dot"></span>Submitted</span></td>
+            <td class="td-light">—</td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions" onclick="openCancel('INV-2026-0018','Sarah Mitchell','Q-2024-001847','AUD 2,340.00','Submitted')">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="td-invoice">INV-2026-0012</td>
+            <td><a href="S11_file_detail.html" style="color:var(--sapphire);font-weight:600;text-decoration:none;">Sarah Mitchell</a><div class="td-q">Q-2024-001847</div></td>
+            <td class="td-muted">10 Apr 2026</td>
+            <td class="td-amount">AUD 1,850.00</td>
+            <td><span class="badge review"><span class="dot"></span>Under review</span></td>
+            <td class="td-light">—</td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="td-invoice">INV-2026-0009</td>
+            <td><a href="S11_file_detail.html" style="color:var(--sapphire);font-weight:600;text-decoration:none;">Daniel Thompson</a><div class="td-q">Q-2024-003291</div></td>
+            <td class="td-muted">28 Mar 2026</td>
+            <td class="td-amount">AUD 1,240.00</td>
+            <td><span class="badge paid"><span class="dot"></span>Paid</span></td>
+            <td class="td-muted">18 Apr 2026</td>
+            <td class="actions-cell"><button class="kebab" aria-disabled="true" title="Paid invoices cannot be cancelled" aria-label="Row actions — disabled">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="td-invoice">INV-2026-0006</td>
+            <td><a href="S11_file_detail.html" style="color:var(--sapphire);font-weight:600;text-decoration:none;">Anita Patel</a><div class="td-q">Q-2023-009654</div></td>
+            <td class="td-muted">14 Feb 2026</td>
+            <td class="td-amount">AUD 920.00</td>
+            <td><span class="badge reduced"><span class="dot"></span>Reduced</span></td>
+            <td class="td-muted">05 Mar 2026</td>
+            <td class="actions-cell"><button class="kebab" aria-disabled="true" title="Reduced invoices cannot be cancelled" aria-label="Row actions — disabled">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="td-invoice">INV-2026-0003</td>
+            <td><a href="S11_file_detail.html" style="color:var(--sapphire);font-weight:600;text-decoration:none;">Ethan Nguyen</a><div class="td-q">Q-2024-005112</div></td>
+            <td class="td-muted">22 Jan 2026</td>
+            <td class="td-amount">AUD 760.00</td>
+            <td><span class="badge refused"><span class="dot"></span>Refused</span></td>
+            <td class="td-light">—</td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="td-invoice">INV-2025-0072</td>
+            <td><a href="S11_file_detail.html" style="color:var(--sapphire);font-weight:600;text-decoration:none;">Marcus Williams</a><div class="td-q">Q-2024-002874</div></td>
+            <td class="td-muted">14 Dec 2025</td>
+            <td class="td-amount">AUD 1,440.00</td>
+            <td><span class="badge cancelled"><span class="dot"></span>Cancelled</span></td>
+            <td class="td-light">—</td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions">⋮</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">Showing 6 of 12 invoices.</p>
+  </div>
+</main>
+
+<!-- Cancel modal -->
+<div class="scrim hidden" id="cancelModal" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+  <div class="modal">
+    <div class="modal-stripe"></div>
+    <div class="modal-head">
+      <h2 id="cancel-title">Cancel invoice</h2>
+      <button class="close-btn" aria-label="Close" onclick="closeCancel()">×</button>
+    </div>
+    <div class="modal-body">
+      <dl class="ctx-compact">
+        <dt>Invoice</dt><dd id="cm-inv">INV-2026-0018</dd>
+        <dt>Client</dt><dd id="cm-client">Sarah Mitchell</dd>
+        <dt>File</dt><dd id="cm-q">Q-2024-001847</dd>
+        <dt>Amount</dt><dd id="cm-amt">AUD 2,340.00</dd>
+        <dt>Status</dt><dd id="cm-status">Submitted</dd>
+      </dl>
+
+      <div class="fld">
+        <label for="c-reason">Reason for cancellation <span class="req">*</span></label>
+        <select class="input" id="c-reason">
+          <option>— Select a reason —</option>
+          <option>Incorrect details — need to resubmit</option>
+          <option>Work no longer billable to LAQ</option>
+          <option>Client has withdrawn instructions</option>
+          <option>Duplicate of another invoice</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="fld">
+        <label for="c-detail">Detail <span class="req">*</span></label>
+        <textarea class="input" rows="3" id="c-detail" placeholder="Explain the reason so LAQ can audit the cancellation."></textarea>
+      </div>
+
+      <label class="cb-row">
+        <input type="checkbox" />
+        <span>I confirm I want to cancel this invoice. A cancellation record will be written to the audit log and the invoice cannot be restored.</span>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeCancel()">Keep invoice</button>
+      <button class="btn btn-destructive">Cancel invoice</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+  function openCancel(inv, client, q, amt, status) {
+    document.getElementById('cm-inv').textContent = inv;
+    document.getElementById('cm-client').textContent = client;
+    document.getElementById('cm-q').textContent = q;
+    document.getElementById('cm-amt').textContent = amt;
+    document.getElementById('cm-status').textContent = status;
+    document.getElementById('cancelModal').classList.remove('hidden');
+  }
+  function closeCancel() {
+    document.getElementById('cancelModal').classList.add('hidden');
+  }
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

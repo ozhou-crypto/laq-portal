@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAQ Practitioner Portal — Mockup Gallery</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1A1A1A;
+    background: #F4F6F9;
+  }
+
+  /* Header */
+  .gallery-header {
+    background: #05325F;
+    color: #fff;
+    padding: 0 40px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .gallery-header .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .gallery-header .logo svg {
+    flex-shrink: 0;
+  }
+  .gallery-header .wordmark {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #fff;
+  }
+  .gallery-header .divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.3);
+  }
+  .gallery-header .subtitle {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+  }
+  .gallery-header .count {
+    margin-left: auto;
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Main */
+  .gallery-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+  }
+
+  .gallery-intro {
+    margin-bottom: 40px;
+  }
+  .gallery-intro h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #05325F;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .gallery-intro p {
+    color: #5C6B7A;
+    font-size: 14px;
+  }
+
+  /* Group */
+  .screen-group {
+    margin-bottom: 48px;
+  }
+  .screen-group-heading {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5C6B7A;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #C9D3DE;
+    margin-bottom: 16px;
+  }
+
+  /* Grid */
+  .screen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  /* Card */
+  .screen-card {
+    background: #fff;
+    border: 1px solid #C9D3DE;
+    border-radius: 4px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .screen-card:hover {
+    border-color: #09549F;
+    box-shadow: 0 4px 12px rgba(9,84,159,0.12);
+  }
+  .screen-card:focus-visible {
+    outline: 2px solid #09549F;
+    outline-offset: 2px;
+  }
+
+  .card-preview {
+    height: 140px;
+    background: #EEF4FA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #C9D3DE;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Colour-coded preview backgrounds by group */
+  .card-preview.group-access    { background: #EEF4FA; }
+  .card-preview.group-home      { background: #E8F4F8; }
+  .card-preview.group-apps      { background: #EDF5EE; }
+  .card-preview.group-files     { background: #FDF6EC; }
+  .card-preview.group-offers    { background: #FEF0EF; }
+  .card-preview.group-invoicing { background: #F0EDF8; }
+  .card-preview.group-profile   { background: #F7F9FC; }
+  .card-preview.group-knowledge { background: #EEF6F8; }
+  .card-preview.group-referrals { background: #FEF0EF; }
+  .card-preview.group-notifs    { background: #FFF8EC; }
+  .card-preview.group-admin     { background: #1E2D3D; }
+
+  .preview-illustration {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.65;
+  }
+  .preview-illustration.admin-ill { opacity: 0.8; }
+
+  /* Mini browser chrome */
+  .mini-browser {
+    width: 200px;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .mini-bar {
+    height: 20px;
+    background: #05325F;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    gap: 4px;
+  }
+  .mini-bar.admin-bar { background: #021C35; }
+  .mini-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+  }
+  .mini-body {
+    background: #fff;
+    height: 90px;
+    display: flex;
+  }
+  .mini-nav {
+    width: 36px;
+    background: #F4F6F9;
+    border-right: 1px solid #C9D3DE;
+    flex-shrink: 0;
+  }
+  .mini-nav.admin-nav { background: #0d1f2d; }
+  .mini-content {
+    flex: 1;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mini-row {
+    height: 7px;
+    border-radius: 2px;
+    background: #E2E8F0;
+  }
+  .mini-row.accent { background: #C9DCF5; width: 60%; }
+  .mini-row.short  { width: 45%; }
+  .mini-row.med    { width: 75%; }
+  .mini-row.full   { width: 100%; }
+
+  /* Auth mini — with nav */
+  .mini-auth { background: #05325F; height: 90px; }
+  .mini-form-body {
+    background: #fff;
+    height: 70px;
+    margin: 0 20px;
+    border-radius: 2px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .card-body {
+    padding: 14px 16px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card-id {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #09549F;
+    font-variant-numeric: tabular-nums;
+  }
+  .card-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #05325F;
+    line-height: 1.3;
+  }
+  .card-group-tag {
+    margin-top: auto;
+    padding-top: 8px;
+    font-size: 11px;
+    color: #5C6B7A;
+  }
+
+  .card-annotation-summary {
+    font-size: 0.6875rem;
+    color: #706e6b;
+    margin-top: 0.25rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* Jump links */
+  .jump-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .jump-link {
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px solid #C9D3DE;
+    border-radius: 2px;
+    color: #09549F;
+    text-decoration: none;
+    background: #fff;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .jump-link:hover { background: #EEF4FA; border-color: #09549F; }
+  .jump-link:focus-visible { outline: 2px solid #09549F; outline-offset: 2px; }
+
+  /* Dev explainer */
+  .dev-explainer {
+    margin-top: 10px;
+    padding: 12px 16px;
+    background: #EEF4FA;
+    border: 1px solid #C9D3DE;
+    border-left: 4px solid #09549F;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #1A1A1A;
+    line-height: 1.6;
+  }
+  .dev-explainer kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    background: #fff;
+    border: 1px solid #C9D3DE;
+    border-radius: 3px;
+    font-family: system-ui, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .dev-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 10px 0 6px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .dev-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dev-legend-dot.ootb   { background: #2E7D32; }
+  .dev-legend-dot.custom { background: #B26A00; }
+
+  /* Per-card effort summary (shown in gallery dev mode) */
+  .card-effort {
+    display: none;
+    margin-top: 6px;
+    padding: 5px 8px;
+    background: #F4F6F9;
+    border: 1px solid #C9D3DE;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #5C6B7A;
+    line-height: 1.5;
+  }
+  .card-effort .ootb-count { color: #2E7D32; font-weight: 700; }
+  .card-effort .custom-count { color: #B26A00; font-weight: 700; }
+  body.gallery-dev-on .card-effort { display: block; }
+
+  /* Gallery dev pill */
+  #gallery-dev-pill {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 7px 14px;
+    background: #1A2B3C;
+    color: #fff;
+    font: 700 11px/1.4 system-ui, sans-serif;
+    letter-spacing: .04em;
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.35);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #gallery-dev-pill:focus-visible { outline: 2px solid #09549F; outline-offset: 3px; }
+  #gallery-dev-pill[aria-pressed=true] { background: #09549F; }
+
+  /* Footer */
+  .gallery-footer {
+    text-align: center;
+    padding: 24px 40px;
+    font-size: 12px;
+    color: #5C6B7A;
+    border-top: 1px solid #C9D3DE;
+    background: #fff;
+  }
+</style>
+</head>
+<body>
+
+<header class="gallery-header" role="banner">
+  <div class="logo">
+    <!-- LAQ shield mark -->
+    <svg width="28" height="32" viewBox="0 0 28 32" fill="none" aria-hidden="true">
+      <path d="M14 0L28 5.5V16C28 23.5 21.5 29.5 14 32C6.5 29.5 0 23.5 0 16V5.5L14 0Z" fill="#09549F"/>
+      <path d="M14 4L25 8.5V16C25 22 19.5 27 14 29C8.5 27 3 22 3 16V8.5L14 4Z" fill="#05325F"/>
+      <text x="14" y="21" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">LAQ</text>
+    </svg>
+    <span class="wordmark">Practitioner Portal</span>
+  </div>
+  <div class="divider" aria-hidden="true"></div>
+  <span class="subtitle">Mockup Gallery</span>
+  <span class="count">24 screens</span>
+</header>
+
+<main class="gallery-main" id="main">
+
+  <div class="gallery-intro">
+    <h1>Screen mockups</h1>
+    <p>All 24 screens across 9 capability areas. Click any card to open the mockup.</p>
+    <p class="dev-explainer">
+      <strong>Dev mode:</strong> press <kbd>Shift+D</kbd> on any mockup (or click the <strong>Dev</strong> pill in the bottom-right corner) to see Salesforce component annotations.
+      <span class="dev-legend"><span class="dev-legend-dot ootb"></span> Green&nbsp;= OOTB</span>
+      <span class="dev-legend"><span class="dev-legend-dot custom"></span> Orange&nbsp;= Custom</span>
+      Letters indicate rough effort (S&nbsp;= ~1 day, M&nbsp;= 2–5 days, L&nbsp;= 5+ days).
+      Effort estimates are a starting point for conversation with developers — not a committed estimate.
+    </p>
+  </div>
+
+  <!-- Jump navigation -->
+  <nav class="jump-nav" aria-label="Jump to group">
+    <a class="jump-link" href="#group-access">Access &amp; Identity</a>
+    <a class="jump-link" href="#group-home">Home &amp; Navigation</a>
+    <a class="jump-link" href="#group-apps">Applications</a>
+    <a class="jump-link" href="#group-files">Grant of Aid Files</a>
+    <a class="jump-link" href="#group-offers">Offers</a>
+    <a class="jump-link" href="#group-invoicing">Invoicing</a>
+    <a class="jump-link" href="#group-profile">Profile</a>
+    <a class="jump-link" href="#group-referrals">Referrals</a>
+    <a class="jump-link" href="#group-notifs">Notifications</a>
+  </nav>
+
+  <!-- ── Group 1: Access & Identity ── -->
+  <section class="screen-group" id="group-access" aria-labelledby="heading-access">
+    <h2 class="screen-group-heading" id="heading-access">Access &amp; Identity</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S01_signin_mfa.html">
+        <div class="card-preview group-access" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-auth">
+              <div class="mini-form-body">
+                <div class="mini-row accent"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row short" style="background:#09549F;margin-top:2px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S01</span>
+          <span class="card-name">Sign-in (MFA) — external practitioners</span>
+          <p class="card-annotation-summary">1 OOTB · 1 Custom · est. 2d</p>
+          <span class="card-group-tag">Access &amp; Identity</span>
+          <span class="card-effort"><span class="ootb-count">2 OOTB</span> · <span class="custom-count">1 Custom</span> · est. 3–4 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S01b_mfa_verify.html">
+        <div class="card-preview group-access" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-auth">
+              <div class="mini-form-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">
+                <div style="width:18px;height:18px;border-radius:4px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="3" stroke="#005288" stroke-width="1" fill="none"/><path d="M5 2v6" stroke="#005288" stroke-width="0.8" stroke-linecap="round"/></svg>
+                </div>
+                <div class="mini-row accent" style="width:70%;height:5px;"></div>
+                <div class="mini-row full" style="height:4px;"></div>
+                <div style="display:flex;gap:3px;width:100%;">
+                  <div style="flex:1;height:10px;background:#005288;border-radius:2px;"></div>
+                </div>
+                <div style="display:flex;gap:3px;width:100%;">
+                  <div style="flex:1;height:10px;background:#c9c9c9;border-radius:2px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S01b</span>
+          <span class="card-name">MFA verify — built-in authenticator</span>
+          <p class="card-annotation-summary">1 OOTB · 1 Custom · est. 2d</p>
+          <span class="card-group-tag">Access &amp; Identity</span>
+          <span class="card-effort"><span class="ootb-count">1 OOTB</span> · <span class="custom-count">1 Custom</span> · est. 2–3 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S03_collection_notice.html">
+        <div class="card-preview group-access" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div class="mini-row accent"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row short" style="background:#09549F;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S03</span>
+          <span class="card-name">Collection Notice &amp; Privacy Statement</span>
+          <p class="card-annotation-summary">2 OOTB · 1 Custom · est. 3d</p>
+          <span class="card-group-tag">Access &amp; Identity</span>
+          <span class="card-effort"><span class="ootb-count">1 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 4–5 days</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 2: Home & Navigation ── -->
+  <section class="screen-group" id="group-home" aria-labelledby="heading-home">
+    <h2 class="screen-group-heading" id="heading-home">Home &amp; Navigation</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S04_dashboard.html">
+        <div class="card-preview group-home" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="display:flex;gap:3px;margin-bottom:3px;">
+                  <div style="flex:1;height:16px;background:#EEF4FA;border:1px solid #C9D3DE;border-radius:2px;"></div>
+                  <div style="flex:1;height:16px;background:#EEF4FA;border:1px solid #C9D3DE;border-radius:2px;"></div>
+                  <div style="flex:1;height:16px;background:#EEF4FA;border:1px solid #C9D3DE;border-radius:2px;"></div>
+                </div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+                <div class="mini-row full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S04</span>
+          <span class="card-name">Home dashboard</span>
+          <p class="card-annotation-summary">6 OOTB · 2 Custom · est. 4d</p>
+          <span class="card-group-tag">Home &amp; Navigation</span>
+          <span class="card-effort"><span class="ootb-count">3 OOTB</span> · <span class="custom-count">4 Custom</span> · est. 10–14 days</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 3: Applications ── -->
+  <section class="screen-group" id="group-apps" aria-labelledby="heading-apps">
+    <h2 class="screen-group-heading" id="heading-apps">Applications</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S06_lodge_application.html">
+        <div class="card-preview group-apps" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div style="width:28px;background:#F4F6F9;border-right:1px solid #C9D3DE;padding:4px 3px;display:flex;flex-direction:column;gap:3px;">
+                <div style="width:100%;height:5px;border-radius:10px;background:#2E7D32;"></div>
+                <div style="width:100%;height:5px;border-radius:10px;background:#2E7D32;"></div>
+                <div style="width:100%;height:5px;border-radius:10px;background:#09549F;"></div>
+                <div style="width:100%;height:5px;border-radius:10px;background:#C9D3DE;"></div>
+                <div style="width:100%;height:5px;border-radius:10px;background:#C9D3DE;"></div>
+              </div>
+              <div class="mini-content">
+                <div class="mini-row accent"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S06</span>
+          <span class="card-name">Lodge new application — multi-step form</span>
+          <p class="card-annotation-summary">2 OOTB · 1 Custom · est. 5d</p>
+          <span class="card-group-tag">Applications</span>
+          <span class="card-effort"><span class="ootb-count">2 OOTB</span> · <span class="custom-count">4 Custom</span> · est. 12–16 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S07_draft_applications.html">
+        <div class="card-preview group-apps" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div class="mini-row accent"></div>
+                <div class="mini-row full" style="height:9px;background:#F4F6F9;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:9px;background:#fff;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:9px;background:#F7F9FC;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:9px;background:#fff;border:1px solid #C9D3DE;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S07</span>
+          <span class="card-name">All applications — list view</span>
+          <p class="card-annotation-summary">5 OOTB · 1 Custom · est. 2d</p>
+          <span class="card-group-tag">Applications</span>
+          <span class="card-effort"><span class="ootb-count">3 OOTB</span> · <span class="custom-count">1 Custom</span> · est. 3–4 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S07b_application_detail.html">
+        <div class="card-preview group-apps" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:18px;background:#05325F;border-radius:2px;margin-bottom:3px;"></div>
+                <div style="display:flex;gap:2px;margin-bottom:3px;">
+                  <div style="flex:1;height:6px;background:#09549F;border-radius:1px;"></div>
+                  <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                  <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                </div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S07b</span>
+          <span class="card-name">Application detail — record page</span>
+          <p class="card-annotation-summary">12 OOTB · 0 Custom · est. 2d</p>
+          <span class="card-group-tag">Applications</span>
+          <span class="card-effort"><span class="ootb-count">12 OOTB</span> · <span class="custom-count">0 Custom</span> · est. 2–3 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S08_application_submitted.html">
+        <div class="card-preview group-apps" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content" style="align-items:center;justify-content:center;">
+                <div style="width:16px;height:16px;border-radius:50%;background:#2E7D32;display:flex;align-items:center;justify-content:center;margin-bottom:4px;">
+                  <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4l2 2 4-4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="mini-row accent" style="width:80%;"></div>
+                <div class="mini-row short" style="width:60%;background:#E2E8F0;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S08</span>
+          <span class="card-name">Application submitted confirmation</span>
+          <p class="card-annotation-summary">6 OOTB · 0 Custom · est. 1d</p>
+          <span class="card-group-tag">Applications</span>
+          <span class="card-effort"><span class="ootb-count">1 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 3–4 days</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 4: Grant of Aid Files ── -->
+  <section class="screen-group" id="group-files" aria-labelledby="heading-files">
+    <h2 class="screen-group-heading" id="heading-files">Grant of Aid Files</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S10_my_files.html">
+        <div class="card-preview group-files" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="display:flex;gap:3px;margin-bottom:3px;">
+                  <div style="padding:1px 5px;background:#09549F;border-radius:2px;height:8px;"></div>
+                  <div style="padding:1px 5px;background:#E2E8F0;border-radius:2px;height:8px;width:24px;"></div>
+                  <div style="padding:1px 5px;background:#E2E8F0;border-radius:2px;height:8px;width:24px;"></div>
+                </div>
+                <div class="mini-row full" style="height:8px;background:#F4F6F9;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:8px;background:#fff;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:8px;background:#F7F9FC;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:8px;background:#fff;border:1px solid #C9D3DE;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S10</span>
+          <span class="card-name">My files — list view</span>
+          <p class="card-annotation-summary">6 OOTB · 0 Custom · est. 1d</p>
+          <span class="card-group-tag">Grant of Aid Files</span>
+          <span class="card-effort"><span class="ootb-count">3 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 4–6 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S09_extension_request.html">
+        <div class="card-preview group-files" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div class="mini-row full" style="height:14px;background:#EEF4FA;border:1px solid #C9D3DE;border-radius:2px;margin-bottom:2px;"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S09</span>
+          <span class="card-name">Extension request</span>
+          <p class="card-annotation-summary">5 OOTB · 0 Custom · est. 2d</p>
+          <span class="card-group-tag">Grant of Aid Files</span>
+          <span class="card-effort"><span class="ootb-count">2 OOTB</span> · <span class="custom-count">3 Custom</span> · est. 6–8 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S11_file_detail.html">
+        <div class="card-preview group-files" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:18px;background:#05325F;border-radius:2px;margin-bottom:3px;"></div>
+                <div style="display:flex;gap:2px;margin-bottom:3px;">
+                  <div style="flex:1;height:6px;background:#09549F;border-radius:1px;"></div>
+                  <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                  <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                </div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S11</span>
+          <span class="card-name">File detail — summary view</span>
+          <p class="card-annotation-summary">11 OOTB · 1 Custom · est. 3d</p>
+          <span class="card-group-tag">Grant of Aid Files</span>
+          <span class="card-effort"><span class="ootb-count">5 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 6–8 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S12_correspondence.html">
+        <div class="card-preview group-files" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div style="display:flex;flex:1;overflow:hidden;">
+                <div style="width:50px;border-right:1px solid #C9D3DE;padding:4px 3px;display:flex;flex-direction:column;gap:3px;">
+                  <div style="height:12px;background:#EEF4FA;border-radius:2px;"></div>
+                  <div style="height:12px;background:#fff;border-radius:2px;"></div>
+                  <div style="height:12px;background:#fff;border-radius:2px;"></div>
+                </div>
+                <div style="flex:1;padding:4px;display:flex;flex-direction:column;gap:3px;">
+                  <div style="height:8px;background:#EEF4FA;border-radius:2px;margin-left:auto;width:70%;"></div>
+                  <div style="height:8px;background:#C9DCF5;border-radius:2px;width:70%;"></div>
+                  <div style="height:8px;background:#EEF4FA;border-radius:2px;margin-left:auto;width:60%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S12</span>
+          <span class="card-name">File detail — Correspondence tab</span>
+          <p class="card-annotation-summary">7 OOTB · 0 Custom · est. 1d</p>
+          <span class="card-group-tag">Grant of Aid Files</span>
+          <span class="card-effort"><span class="ootb-count">2 OOTB</span> · <span class="custom-count">3 Custom</span> · est. 10–14 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S13_documents.html">
+        <div class="card-preview group-files" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:20px;border:1.5px dashed #09549F;border-radius:2px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;">
+                  <div style="width:8px;height:8px;background:#09549F;opacity:0.4;border-radius:1px;"></div>
+                </div>
+                <div style="display:flex;gap:3px;">
+                  <div style="width:14px;height:14px;background:#FEE2E2;border-radius:1px;flex-shrink:0;"></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                    <div class="mini-row full"></div>
+                    <div class="mini-row short"></div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:3px;margin-top:2px;">
+                  <div style="width:14px;height:14px;background:#DBEAFE;border-radius:1px;flex-shrink:0;"></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                    <div class="mini-row full"></div>
+                    <div class="mini-row short"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S13</span>
+          <span class="card-name">File detail — Documents &amp; uploads</span>
+          <p class="card-annotation-summary">7 OOTB · 0 Custom · est. 1d</p>
+          <span class="card-group-tag">Grant of Aid Files</span>
+          <span class="card-effort"><span class="ootb-count">4 OOTB</span> · <span class="custom-count">0 Custom</span> · est. 2–3 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S14_outcomes.html">
+        <div class="card-preview group-files" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div class="mini-row accent"></div>
+                <div style="display:flex;gap:4px;margin-top:3px;align-items:flex-start;">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                    <div style="width:7px;height:7px;border-radius:50%;background:#2E7D32;flex-shrink:0;"></div>
+                    <div style="width:1px;flex:1;background:#C9D3DE;"></div>
+                    <div style="width:7px;height:7px;border-radius:50%;background:#2E7D32;flex-shrink:0;"></div>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                    <div><div class="mini-row full"></div><div class="mini-row short"></div></div>
+                    <div><div class="mini-row full"></div><div class="mini-row short"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S14</span>
+          <span class="card-name">File detail — Outcomes</span>
+          <p class="card-annotation-summary">5 OOTB · 2 Custom · est. 3d</p>
+          <span class="card-group-tag">Grant of Aid Files</span>
+          <span class="card-effort"><span class="ootb-count">3 OOTB</span> · <span class="custom-count">1 Custom</span> · est. 4–6 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S15_decision_letters.html">
+        <div class="card-preview group-files" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div style="display:flex;flex:1;overflow:hidden;">
+                <div style="width:55px;border-right:1px solid #C9D3DE;padding:4px 3px;display:flex;flex-direction:column;gap:2px;">
+                  <div style="height:8px;background:#EEF4FA;border-radius:1px;"></div>
+                  <div style="height:8px;background:#09549F;opacity:0.2;border-radius:1px;"></div>
+                  <div style="height:8px;background:#EEF4FA;border-radius:1px;"></div>
+                  <div style="height:8px;background:#EEF4FA;border-radius:1px;"></div>
+                </div>
+                <div style="flex:1;padding:4px;background:#F7F9FC;">
+                  <div style="background:#fff;height:100%;border:1px solid #C9D3DE;border-radius:1px;padding:3px;display:flex;flex-direction:column;gap:2px;">
+                    <div class="mini-row full" style="background:#05325F;height:4px;"></div>
+                    <div class="mini-row full"></div>
+                    <div class="mini-row med"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S15</span>
+          <span class="card-name">Historical decision letters viewer</span>
+          <p class="card-annotation-summary">6 OOTB · 2 Custom · est. 3d</p>
+          <span class="card-group-tag">Grant of Aid Files</span>
+          <span class="card-effort"><span class="ootb-count">2 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 5–7 days</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 5: Offers ── -->
+  <section class="screen-group" id="group-offers" aria-labelledby="heading-offers">
+    <h2 class="screen-group-heading" id="heading-offers">Offers</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S16_decline_offer.html">
+        <div class="card-preview group-offers" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:16px;background:#FEF0EF;border:1px solid #B3261E;border-radius:2px;margin-bottom:4px;"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+                <div class="mini-row short" style="background:#B3261E;opacity:0.7;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S16</span>
+          <span class="card-name">Reject an offer — structured form</span>
+          <p class="card-annotation-summary">7 OOTB · 0 Custom · est. 1d</p>
+          <span class="card-group-tag">Offers</span>
+          <span class="card-effort"><span class="ootb-count">2 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 5–7 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S24_accept_offer.html">
+        <div class="card-preview group-offers" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:16px;background:#E8F5E9;border:1px solid #2E7D32;border-radius:2px;margin-bottom:4px;"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+                <div class="mini-row short" style="background:#2E7D32;opacity:0.7;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S24</span>
+          <span class="card-name">Grant offer detail — accept offer</span>
+          <p class="card-annotation-summary">3 OOTB · 2 Custom · est. 4d</p>
+          <span class="card-group-tag">Offers</span>
+          <span class="card-effort"><span class="ootb-count">3 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 6–8 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S24b_accept_offer_expired.html">
+        <div class="card-preview group-offers" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:16px;background:#f0f0f0;border:1px solid #939393;border-radius:2px;margin-bottom:4px;"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S24b</span>
+          <span class="card-name">Grant offer detail — expired state</span>
+          <p class="card-annotation-summary">State variant of S24 · 0 Custom</p>
+          <span class="card-group-tag">Offers</span>
+          <span class="card-effort"><span class="ootb-count">6 OOTB</span> · <span class="custom-count">0 Custom</span> · Same FlexiPage as S24</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 6: Invoicing ── -->
+  <section class="screen-group" id="group-invoicing" aria-labelledby="heading-invoicing">
+    <h2 class="screen-group-heading" id="heading-invoicing">Invoicing</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S17_submit_invoice.html">
+        <div class="card-preview group-invoicing" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div style="display:flex;flex:1;overflow:hidden;">
+                <div style="flex:2;padding:4px;display:flex;flex-direction:column;gap:3px;border-right:1px solid #C9D3DE;">
+                  <div class="mini-row accent"></div>
+                  <div class="mini-row full" style="height:8px;background:#F4F6F9;border:1px solid #C9D3DE;"></div>
+                  <div class="mini-row full" style="height:8px;background:#fff;border:1px solid #C9D3DE;"></div>
+                  <div class="mini-row full" style="height:8px;background:#F7F9FC;border:1px solid #C9D3DE;"></div>
+                </div>
+                <div style="flex:1;padding:4px;display:flex;flex-direction:column;gap:3px;">
+                  <div class="mini-row full"></div>
+                  <div class="mini-row full"></div>
+                  <div class="mini-row short" style="background:#B26A00;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S17</span>
+          <span class="card-name">Submit invoice</span>
+          <p class="card-annotation-summary">6 OOTB · 2 Custom · est. 5d</p>
+          <span class="card-group-tag">Invoicing</span>
+          <span class="card-effort"><span class="ootb-count">3 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 10–14 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S18_invoice_list.html">
+        <div class="card-preview group-invoicing" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div class="mini-row accent"></div>
+                <div style="display:flex;flex-direction:column;gap:2px;margin-top:2px;">
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <div style="width:28px;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                    <div style="width:18px;height:6px;background:#FEF3CD;border-radius:10px;"></div>
+                  </div>
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <div style="width:28px;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                    <div style="width:18px;height:6px;background:#DCFCE7;border-radius:10px;"></div>
+                  </div>
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <div style="width:28px;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                    <div style="width:18px;height:6px;background:#FEE2E2;border-radius:10px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S18</span>
+          <span class="card-name">Invoice list &amp; cancel invoice</span>
+          <p class="card-annotation-summary">6 OOTB · 0 Custom · est. 1d</p>
+          <span class="card-group-tag">Invoicing</span>
+          <span class="card-effort"><span class="ootb-count">4 OOTB</span> · <span class="custom-count">0 Custom</span> · est. 2–3 days</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 7: Profile ── -->
+  <section class="screen-group" id="group-profile" aria-labelledby="heading-profile">
+    <h2 class="screen-group-heading" id="heading-profile">Profile</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S19_practice_details.html">
+        <div class="card-preview group-profile" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:18px;background:#fff;border:1px solid #C9D3DE;border-radius:2px;margin-bottom:3px;padding:3px 4px;display:flex;flex-direction:column;gap:2px;">
+                  <div class="mini-row accent"></div>
+                  <div class="mini-row med"></div>
+                </div>
+                <div style="height:18px;background:#fff;border:1px solid #C9D3DE;border-radius:2px;padding:3px 4px;display:flex;flex-direction:column;gap:2px;">
+                  <div class="mini-row accent"></div>
+                  <div style="height:4px;background:#FEF3CD;border-radius:10px;width:60%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S19</span>
+          <span class="card-name">Practice details — contact, ABN, banking</span>
+          <p class="card-annotation-summary">4 OOTB · 2 Custom · est. 3d</p>
+          <span class="card-group-tag">Profile</span>
+          <span class="card-effort"><span class="ootb-count">3 OOTB</span> · <span class="custom-count">2 Custom</span> · est. 6–8 days</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S25_manage_availability.html">
+        <div class="card-preview group-profile" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="display:flex;align-items:center;gap:3px;margin-bottom:4px;">
+                  <div class="mini-row accent" style="width:50%;"></div>
+                  <div style="width:18px;height:6px;background:#DCFCE7;border:1px solid #2E7D32;border-radius:10px;"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                    <div style="width:14px;height:6px;background:#DCFCE7;border-radius:10px;"></div>
+                  </div>
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                    <div style="width:14px;height:6px;background:#DCFCE7;border-radius:10px;"></div>
+                  </div>
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                    <div style="width:14px;height:6px;background:#FEE2E2;border-radius:10px;"></div>
+                  </div>
+                  <div style="display:flex;gap:3px;align-items:center;">
+                    <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                    <div style="width:14px;height:6px;background:#DCFCE7;border-radius:10px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S25</span>
+          <span class="card-name">Manage availability — panel capacity toggles</span>
+          <p class="card-annotation-summary">4 OOTB · 1 Custom · est. 5d</p>
+          <span class="card-group-tag">Profile</span>
+          <span class="card-effort"><span class="ootb-count">4 OOTB</span> · <span class="custom-count">1 Custom</span> · est. 6–8 days</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 8: Referrals ── -->
+  <section class="screen-group" id="group-referrals" aria-labelledby="heading-referrals">
+    <h2 class="screen-group-heading" id="heading-referrals">Referrals</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S26_referral_list.html">
+        <div class="card-preview group-referrals" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div class="mini-row accent"></div>
+                <div class="mini-row full" style="height:9px;background:#F4F6F9;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:9px;background:#fff;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:9px;background:#F7F9FC;border:1px solid #C9D3DE;"></div>
+                <div class="mini-row full" style="height:9px;background:#fff;border:1px solid #C9D3DE;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S26</span>
+          <span class="card-name">Referral list view</span>
+          <p class="card-annotation-summary">OOTB record list pattern</p>
+          <span class="card-group-tag">Referrals</span>
+        </div>
+      </a>
+
+      <a class="screen-card" href="S26b_referral_detail.html">
+        <div class="card-preview group-referrals" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div class="mini-content">
+                <div style="height:18px;background:#E4606D;border-radius:2px;margin-bottom:3px;"></div>
+                <div style="display:flex;gap:2px;margin-bottom:3px;">
+                  <div style="flex:1;height:6px;background:#05325F;border-radius:1px;"></div>
+                  <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                  <div style="flex:1;height:6px;background:#E2E8F0;border-radius:1px;"></div>
+                </div>
+                <div class="mini-row full"></div>
+                <div class="mini-row med"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S26b</span>
+          <span class="card-name">Referral detail — record page</span>
+          <p class="card-annotation-summary">OOTB record detail pattern</p>
+          <span class="card-group-tag">Referrals</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Group 9: Notifications ── -->
+  <section class="screen-group" id="group-notifs" aria-labelledby="heading-notifs">
+    <h2 class="screen-group-heading" id="heading-notifs">Notifications</h2>
+    <div class="screen-grid">
+
+      <a class="screen-card" href="S22_notifications.html">
+        <div class="card-preview group-notifs" aria-hidden="true">
+          <div class="mini-browser">
+            <div class="mini-bar"><div class="mini-dot"></div><div class="mini-dot"></div><div class="mini-dot"></div></div>
+            <div class="mini-body">
+              <div class="mini-nav"></div>
+              <div style="display:flex;flex:1;overflow:hidden;">
+                <div style="width:60px;border-right:1px solid #C9D3DE;padding:4px 3px;display:flex;flex-direction:column;gap:3px;">
+                  <div style="height:10px;background:#EEF4FA;border-radius:1px;display:flex;align-items:center;gap:2px;padding:0 2px;">
+                    <div style="width:4px;height:4px;border-radius:50%;background:#09549F;flex-shrink:0;"></div>
+                    <div style="flex:1;height:3px;background:#C9D3DE;border-radius:1px;"></div>
+                  </div>
+                  <div style="height:10px;background:#fff;border-radius:1px;"></div>
+                  <div style="height:10px;background:#fff;border-radius:1px;"></div>
+                </div>
+                <div style="flex:1;padding:4px;display:flex;flex-direction:column;gap:3px;">
+                  <div class="mini-row accent"></div>
+                  <div class="mini-row full"></div>
+                  <div class="mini-row med"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-id">S22</span>
+          <span class="card-name">Notifications centre &amp; channel preferences</span>
+          <p class="card-annotation-summary">2 OOTB · 5 Custom · est. 6d</p>
+          <span class="card-group-tag">Notifications</span>
+          <span class="card-effort"><span class="ootb-count">2 OOTB</span> · <span class="custom-count">3 Custom</span> · est. 8–10 days</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+
+</main>
+
+<footer class="gallery-footer">
+  LAQ Practitioner Portal — design prototype. Not for public release. Generated 11 May 2026.
+</footer>
+
+
+<button id="gallery-dev-pill" aria-pressed="false" aria-label="Toggle dev effort summaries on gallery cards (Shift+D)">Dev · Shift+D</button>
+
+<script>
+(function () {
+  var pill = document.getElementById('gallery-dev-pill');
+  var on = false;
+  function setDev(v) {
+    on = v;
+    document.body.classList.toggle('gallery-dev-on', on);
+    pill.setAttribute('aria-pressed', String(on));
+  }
+  pill.addEventListener('click', function () { setDev(!on); });
+  pill.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDev(!on); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.shiftKey && (e.key === 'D' || e.key === 'd')) setDev(!on);
+  });
+}());
+</script>
+</body>
+</html>

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<!--
+  S04 — Home Dashboard — v3 (LAQ brand-aligned)
+  ================================================
+  Design rationale (~200 words):
+
+  The dashboard is the logged-in landing page. Layout is LWR two-column (main +
+  right rail) with flexible rows in the main column.
+
+  Brand treatment (v3, matches legalaid.qld.gov.au):
+  - WHITE site header with the LAQ logo tile in navy and product name
+  - NAVY navigation strip sits beneath the header as a separate band, QLD-gov
+    style, with an underline-on-active state
+  - WHITE page background throughout; the subtle blue-grey appears only on
+    table header bands and hover rows
+  - Coloured left-border accents on the five KPI tiles (3px) — the single
+    bespoke touch that reads as a recognised card affordance
+
+  Regions:
+  - Page greeting + sub-line (Custom LWC: simple greeting component)
+  - At-a-glance KPI strip (OmniStudio: FlexCard) — five tiles, clickable
+  - Needs your attention (OmniStudio: FlexCard) — heterogeneous action items
+  - Recent files (OOtB Record List / lightning-datatable)
+  - Quick actions (OmniStudio: FlexCard) — four icon tiles
+  - Right rail: Notifications (OOtB Notification Bell panel) and
+    Draft applications (OOtB Record List)
+
+  Accessibility: visible focus rings, status conveyed by icon + text, semantic
+  landmarks, and the annotation legend bar is keyboard-dismissible.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Home — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --sky: #0085B3;
+    --text: #1A1A1A; --text-med: #3D3D3D; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --success: #1E7E34; --success-bg: #EBF5EB; --success-border: #A3D9A5;
+    --warning: #8A4500; --warning-bg: #FEF3E2; --warning-border: #F5C06E;
+    --error: #C0392B; --error-bg: #FDECEB; --error-border: #F5BDBA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+  }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Public Sans', 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--page);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  a { color: var(--sapphire); }
+  button { font-family: inherit; }
+  h1, h2, h3 { margin: 0; }
+
+  /* ===== WHITE SITE HEADER ===== */
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner {
+    display: flex; align-items: center; height: 64px; padding: 0 24px;
+    gap: 16px; max-width: 1400px; margin: 0 auto;
+  }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; }
+  .logo-tile {
+    width: 44px; height: 44px; background: var(--navy); border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 900; font-size: 22px; letter-spacing: -0.02em;
+  }
+  .brand-text { text-align: left; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub  { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1px; }
+
+  .search-wrap { flex: 1; max-width: 420px; position: relative; margin: 0 16px; }
+  .search-wrap .input {
+    width: 100%; height: 36px; border: 1px solid var(--border); border-radius: 3px;
+    padding-left: 32px; padding-right: 10px; font-size: 13px; outline: none; background: #fff; font-family: inherit;
+  }
+  .search-wrap .input:focus { border-color: var(--sapphire); box-shadow: 0 0 0 3px var(--info-bg); }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+
+  .flow-indicator { display: flex; align-items: center; gap: 0; flex-shrink: 0; }
+  .flow-indicator .step { font-size: 10px; padding: 2px 6px; border-radius: 2px; color: var(--text-light); }
+  .flow-indicator .step.done { color: var(--text-muted); }
+  .flow-indicator .step.active { background: var(--navy); color: #fff; font-weight: 700; }
+  .flow-indicator .bar { width: 8px; height: 1px; background: var(--border-light); }
+
+  .utilities { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .icon-btn {
+    position: relative; background: none; border: 1px solid var(--border); border-radius: 3px;
+    color: var(--text-muted); padding: 6px 8px; cursor: pointer;
+    display: inline-flex; align-items: center;
+  }
+  .icon-btn .count {
+    position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: var(--error);
+    border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .annot-toggle {
+    background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px;
+    color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer;
+    letter-spacing: 0.03em;
+  }
+  .annot-toggle[aria-pressed="false"] {
+    background: transparent; border-color: var(--border); color: var(--text-muted);
+  }
+  /* When annotations are hidden, collapse the legend and every badge. */
+  body.annot-off .annot-legend { display: none; }
+  body.annot-off .annot { display: none !important; }
+  .profile-btn {
+    display: flex; align-items: center; gap: 8px; background: none;
+    border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
+    padding: 4px 10px; color: var(--text); font-family: inherit;
+  }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+  /* Profile dropdown menu */
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0;
+    display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head {
+    padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light);
+    display: flex; gap: 10px; align-items: center; margin-bottom: 4px;
+  }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 9px 14px; text-align: left;
+    background: none; border: none; font-family: inherit; font-size: 13px;
+    color: var(--text); text-decoration: none; cursor: pointer;
+  }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .avatar {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire);
+    color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; letter-spacing: 0.02em;
+  }
+  .avatar.sm { width: 26px; height: 26px; font-size: 10px; }
+  .profile-name { font-size: 12px; font-weight: 700; line-height: 1.2; }
+  .profile-firm { font-size: 10px; color: var(--text-muted); line-height: 1.2; }
+
+  /* ===== NAVY NAV BAND ===== */
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item {
+    padding: 11px 16px; background: none; border: none;
+    border-bottom: 3px solid transparent;
+    color: rgba(255,255,255,0.78); font-weight: 400; font-size: 13px; cursor: pointer;
+    white-space: nowrap; font-family: inherit; transition: all 0.15s; letter-spacing: 0.01em;
+    text-decoration: none;
+  }
+  .nav-item:hover { color: #fff; }
+  .nav-item[aria-current="page"] {
+    background: rgba(255,255,255,0.15);
+    border-bottom-color: #fff;
+    color: #fff; font-weight: 700;
+  }
+
+  /* ===== ANNOTATION LEGEND ===== */
+  .annot-legend {
+    background: #FAFBFC;
+    border-bottom: 1px solid var(--border-light);
+    padding: 6px 24px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .annot-legend .lbl {
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .annot {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px;
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .annot.ootb       { background: #E6F4EA; color: #1E7E34; }
+  .annot.flexcard   { background: #F0E6FF; color: #6B21A8; }
+  .annot.omniscript { background: #FFF0F0; color: #9B1C1C; }
+  .annot.flow       { background: #FEF3E2; color: #8A4500; }
+  .annot.dataraptor { background: #F0FFF4; color: #065F46; }
+  .annot.custom     { background: #EBF4FF; color: #09549F; }
+
+  /* ===== MAIN ===== */
+  main { flex: 1; background: var(--page); }
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 24px 24px 40px; }
+  .page-head { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-light); }
+  .page-head h1 { font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-head .sub { font-size: 13px; color: var(--text-muted); }
+
+  .grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+  .main-col { display: flex; flex-direction: column; gap: 24px; }
+  .rail-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  /* KPI tiles */
+  .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .kpi {
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    padding: 16px 14px; text-align: left; cursor: pointer;
+    transition: box-shadow 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    font-family: inherit;
+  }
+  .kpi:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.10); }
+  .kpi.v1 { border-left: 3px solid var(--navy); }
+  .kpi.v2 { border-left: 3px solid var(--text); }
+  .kpi.v3 { border-left: 3px solid var(--warning); }
+  .kpi.v4 { border-left: 3px solid var(--text); }
+  .kpi.v5 { border-left: 3px solid var(--error); }
+  .kpi .num { font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+  .kpi.v1 .num { color: var(--navy); }
+  .kpi.v2 .num, .kpi.v4 .num { color: var(--text); }
+  .kpi.v3 .num { color: var(--warning); }
+  .kpi.v5 .num { color: var(--error); }
+  .kpi .lbl { font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.3; }
+
+  /* Card */
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); overflow: hidden; }
+  .card-head { padding: 11px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #FAFBFC; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .card-head-actions { display: flex; align-items: center; gap: 8px; }
+
+  /* Attention list */
+  .attn-row {
+    display: flex; align-items: center; gap: 14px; padding: 13px 16px;
+    border-bottom: 1px solid var(--border-light);
+    background: #fff;
+  }
+  .attn-row:last-child { border-bottom: none; }
+  .attn-row.urgent { background: #FFF8F8; }
+  .attn-pip { width: 3px; height: 40px; border-radius: 2px; background: var(--border-light); flex-shrink: 0; }
+  .attn-row.urgent .attn-pip { background: var(--error); }
+  .attn-body { flex: 1; min-width: 0; }
+  .attn-type { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .attn-row.urgent .attn-type { color: var(--error); }
+  .attn-desc { font-size: 13px; color: var(--text); line-height: 1.4; }
+
+  /* Buttons */
+  .btn {
+    height: 30px; padding: 0 14px; border-radius: 3px; font-size: 12px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    font-family: inherit; font-weight: 600;
+  }
+  .btn.lg { height: 38px; padding: 0 18px; font-size: 13px; }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-primary:hover { background: #073F7A; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost { background: transparent; color: var(--sapphire); border: none; font-weight: 400; padding: 0 6px; }
+
+  /* Data table */
+  .dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dt thead tr { background: var(--surface); border-bottom: 1px solid var(--border-light); }
+  .dt th { padding: 8px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; white-space: nowrap; }
+  .dt tbody tr { border-bottom: 1px solid var(--border-light); cursor: pointer; }
+  .dt tbody tr:hover { background: var(--surface); }
+  .dt td { padding: 11px 14px; }
+  .td-client { font-weight: 600; color: var(--sapphire); }
+  .td-q { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12px; color: var(--text-muted); }
+  .td-muted { font-size: 12px; color: var(--text-muted); }
+  .td-light { font-size: 12px; color: var(--text-light); }
+
+  /* Badge */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px;
+    border-radius: 3px; font-size: 12px; font-weight: 600; line-height: 1.5;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .badge.active   { background: #E8F5E9; color: #2E7D32; border: 1px solid #2E7D3222; }
+  .badge.active   .dot { background: #2E7D32; }
+  .badge.awaiting { background: #FFF3E0; color: #B26A00; border: 1px solid #B26A0022; }
+  .badge.awaiting .dot { background: #B26A00; }
+  .badge.draft    { background: #F4F6F9; color: #5C6B7A; border: 1px solid #5C6B7A22; }
+  .badge.draft    .dot { background: #5C6B7A; }
+
+  /* Quick actions */
+  .qa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .qa {
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    padding: 18px 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    cursor: pointer; transition: all 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    text-align: left; font-family: inherit;
+  }
+  .qa:hover { border-color: var(--sapphire); box-shadow: 0 3px 10px rgba(9,84,159,0.10); }
+  .qa-icon {
+    width: 36px; height: 36px; background: var(--navy); border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px;
+  }
+  .qa-label { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+
+  /* Rail — Notifications */
+  .notif {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-light);
+    background: #fff;
+  }
+  .notif:last-child { border-bottom: none; }
+  .notif.unread { background: #F8FBFF; }
+  .notif-row { display: flex; gap: 8px; }
+  .notif-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sapphire); margin-top: 4px; flex-shrink: 0; }
+  .notif-body { flex: 1; }
+  .notif-body.noread { padding-left: 15px; }
+  .notif-title { font-size: 12px; color: var(--text); line-height: 1.3; margin-bottom: 2px; }
+  .notif.unread .notif-title { font-weight: 700; }
+  .notif-text { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .notif-time { font-size: 10px; color: var(--text-light); margin-top: 4px; }
+  .notif-footer { padding: 10px 14px; border-top: 1px solid var(--border-light); }
+
+  .count-pill { background: var(--error); color: #fff; border-radius: 10px; font-size: 10px; font-weight: 700; padding: 1px 7px; }
+
+  /* Drafts */
+  .draft { padding: 12px 14px; border-bottom: 1px solid var(--border-light); }
+  .draft:last-child { border-bottom: none; }
+  .draft-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .draft-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  .draft-bar {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .bar-track { flex: 1; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--sapphire); border-radius: 2px; transition: width 0.4s; }
+  .bar-pct { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+
+  /* ===== NAVY FOOTER ===== */
+  .site-footer { background: var(--navy); flex-shrink: 0; }
+  .footer-inner {
+    max-width: 1400px; margin: 0 auto; padding: 20px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .footer-inner .left { display: flex; align-items: center; gap: 10px; }
+  .footer-inner .mark {
+    width: 32px; height: 32px; background: rgba(255,255,255,0.15); border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 900; font-size: 16px;
+  }
+  .footer-inner span { color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; }
+  .footer-links a:hover { color: #fff; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; }
+  }
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .qa-grid { grid-template-columns: repeat(2, 1fr); }
+    .flow-indicator, .brand-text { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <button class="logo-btn" aria-label="Legal Aid Queensland home">
+      <div class="logo-tile">L</div>
+      <div class="brand-text">
+        <div class="brand-name">Legal Aid Queensland</div>
+        <div class="brand-sub">Practitioner Portal</div>
+      </div>
+    </button>
+
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A6472" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="input" placeholder="Search files, clients, Q-numbers…" aria-label="Global search" />
+    </div>
+
+    <div class="flow-indicator" aria-hidden="true">
+      <div class="step done">Sign in</div>
+      <div class="bar"></div>
+      <div class="step active">Dashboard</div>
+      <div class="bar"></div>
+      <div class="step">Application</div>
+      <div class="bar"></div>
+      <div class="step">Confirmed</div>
+      <div class="bar"></div>
+      <div class="step">File detail</div>
+      <div class="bar"></div>
+      <div class="step">Invoice</div>
+    </div>
+
+    <div class="utilities">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" aria-controls="annot-legend" type="button">⚡ Annotations ON</button>
+      <button class="icon-btn" aria-label="Notifications — 2 unread">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="count">2</span>
+      </button>
+      <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span class="brand-text">
+            <div class="profile-name">J. Halloran</div>
+            <div class="profile-firm">Halloran & Associates</div>
+          </span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html" aria-current="page">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<div class="annot-legend" id="annot-legend">
+  <span class="lbl">Build approach:</span>
+  <span class="annot ootb">⚡ OOtB EC component</span>
+  <span class="annot flexcard">🃏 OmniStudio: FlexCard</span>
+  <span class="annot omniscript">📋 OmniStudio: OmniScript</span>
+  <span class="annot flow">🔄 Salesforce Flow</span>
+  <span class="annot dataraptor">⚙ OmniStudio: DataRaptor</span>
+  <span class="annot custom">🔧 Custom LWC</span>
+</div>
+
+<main>
+  <div class="page-wrap">
+    <div class="page-head">
+      <h1>Good morning, James</h1>
+      <div class="sub">Halloran & Associates · Brisbane CBD · Thursday, 24 April 2026</div>
+    </div>
+
+    <div class="grid">
+      <div class="main-col">
+
+        <!-- KPIs -->
+        <section>
+          <div class="section-head">
+            <h2 class="eyebrow">At a glance</h2>
+            <span class="annot flexcard">🃏 OmniStudio: FlexCard</span>
+          </div>
+          <div class="kpi-grid">
+            <a class="kpi v1" href="S10_my_files.html"><div class="num">3</div><div class="lbl">Active files</div></a>
+            <a class="kpi v2" href="S07_draft_applications.html"><div class="num">2</div><div class="lbl">Draft applications</div></a>
+            <a class="kpi v3" href="S10_my_files.html"><div class="num">1</div><div class="lbl">Awaiting LAQ</div></a>
+            <a class="kpi v4" href="S18_invoice_list.html"><div class="num">1</div><div class="lbl">Invoices in progress</div></a>
+            <a class="kpi v5" href="S22_notifications.html"><div class="num">2</div><div class="lbl">Unread notifications</div></a>
+          </div>
+        </section>
+
+        <!-- Needs attention -->
+        <section class="card">
+          <div class="card-head">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="card-title">Needs your attention</span>
+            </div>
+            <div class="card-head-actions">
+              <span class="annot flexcard">🃏 OmniStudio: FlexCard</span>
+              <button class="btn btn-ghost">Mark all done</button>
+            </div>
+          </div>
+          <div>
+            <div class="attn-row urgent">
+              <div class="attn-pip"></div>
+              <div class="attn-body">
+                <div class="attn-type">Information request</div>
+                <div class="attn-desc">Q-2024-001847 — Sarah Mitchell: additional information required by 30 Apr 2026.</div>
+              </div>
+              <a class="btn btn-primary" href="S12_correspondence.html">Respond</a>
+            </div>
+            <div class="attn-row urgent">
+              <div class="attn-pip"></div>
+              <div class="attn-body">
+                <div class="attn-type">Decision letter</div>
+                <div class="attn-desc">Q-2024-003291 — Daniel Thompson: acknowledge receipt by 28 Apr 2026.</div>
+              </div>
+              <a class="btn btn-primary" href="S15_decision_letters.html">Acknowledge</a>
+            </div>
+            <div class="attn-row">
+              <div class="attn-pip"></div>
+              <div class="attn-body">
+                <div class="attn-type">Invoice query</div>
+                <div class="attn-desc">INV-2025-0012 has been queried by LAQ Accounts Payable. Review and respond.</div>
+              </div>
+              <a class="btn btn-primary" href="S18_invoice_list.html">Review</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Recent files -->
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title">Recent files</span>
+            <div class="card-head-actions">
+              <span class="annot ootb">⚡ OOtB: lightning-datatable</span>
+              <a class="btn btn-ghost" href="S10_my_files.html">View all →</a>
+            </div>
+          </div>
+          <table class="dt">
+            <thead><tr><th>Client</th><th>Q-number</th><th>Matter type</th><th>Status</th><th>Next action</th></tr></thead>
+            <tbody>
+              <tr onclick="location.href='S11_file_detail.html'" style="cursor:pointer;">                <td class="td-client">Sarah Mitchell</td>
+                <td class="td-q">Q-2024-001847</td>
+                <td>Family Law</td>
+                <td><span class="badge active"><span class="dot"></span>Active</span></td>
+                <td class="td-muted">LAQ information request due 30 Apr 2026</td>
+              </tr>
+              <tr onclick="location.href='S11_file_detail.html'" style="cursor:pointer;">                <td class="td-client">Daniel Thompson</td>
+                <td class="td-q">Q-2024-003291</td>
+                <td>Criminal Law</td>
+                <td><span class="badge awaiting"><span class="dot"></span>Awaiting LAQ</span></td>
+                <td class="td-muted">Decision letter — acknowledge by 28 Apr 2026</td>
+              </tr>
+              <tr onclick="location.href='S11_file_detail.html'" style="cursor:pointer;">                <td class="td-client">Anita Patel</td>
+                <td class="td-q">Q-2023-009654</td>
+                <td>Civil Law</td>
+                <td><span class="badge active"><span class="dot"></span>Active</span></td>
+                <td class="td-light">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Quick actions -->
+        <section>
+          <div class="section-head">
+            <h2 class="eyebrow">Quick actions</h2>
+            <span class="annot flexcard">🃏 OmniStudio: FlexCard</span>
+          </div>
+          <div class="qa-grid">
+            <a class="qa" href="S06_lodge_application.html"><div class="qa-icon">＋</div><span class="qa-label">Lodge new application</span></a>
+            <a class="qa" href="S09_extension_request.html"><div class="qa-icon">⏱</div><span class="qa-label">Submit extension</span></a>
+            <a class="qa" href="S17_submit_invoice.html"><div class="qa-icon">$</div><span class="qa-label">Submit invoice</span></a>
+            <a class="qa" href="S19_practice_details.html"><div class="qa-icon">⚙</div><span class="qa-label">Practice details</span></a>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right rail -->
+      <aside class="rail-col">
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title">Notifications</span>
+            <div class="card-head-actions">
+              <span class="annot ootb">⚡ OOtB: Notification Bell</span>
+              <span class="count-pill">2</span>
+            </div>
+          </div>
+          <div>
+            <div class="notif unread">
+              <div class="notif-row">
+                <div class="notif-dot"></div>
+                <div class="notif-body">
+                  <div class="notif-title">Information request</div>
+                  <div class="notif-text">LAQ has requested additional information for Q-2024-001847 — due 30 Apr 2026.</div>
+                  <div class="notif-time">Today, 9:14 am</div>
+                </div>
+              </div>
+            </div>
+            <div class="notif unread">
+              <div class="notif-row">
+                <div class="notif-dot"></div>
+                <div class="notif-body">
+                  <div class="notif-title">Decision letter to acknowledge</div>
+                  <div class="notif-text">A decision letter has been issued for Q-2024-003291. Acknowledge receipt by 28 Apr 2026.</div>
+                  <div class="notif-time">Today, 8:01 am</div>
+                </div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-row">
+                <div class="notif-body noread">
+                  <div class="notif-title">Invoice approved</div>
+                  <div class="notif-text">Invoice INV-2024-0089 for AUD 1,240.00 has been approved and sent to Accounts Payable.</div>
+                  <div class="notif-time">Yesterday, 4:47 pm</div>
+                </div>
+              </div>
+            </div>
+            <div class="notif-footer">
+              <a class="btn btn-ghost" href="S22_notifications.html">View all notifications →</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <span class="card-title">Draft applications</span>
+            <div class="card-head-actions">
+              <span class="annot ootb">⚡ OOtB: Record List</span>
+              <a class="btn btn-primary" href="S06_lodge_application.html">+ New</a>
+            </div>
+          </div>
+          <div>
+            <div class="draft">
+              <div class="draft-title">Beverley Davies</div>
+              <div class="draft-meta">Family Law · Edited 21 Apr 2026</div>
+              <div class="draft-bar"><div class="bar-track"><div class="bar-fill" style="width:60%;"></div></div><span class="bar-pct">60%</span></div>
+            </div>
+            <div class="draft">
+              <div class="draft-title">Wei Chen</div>
+              <div class="draft-meta">Criminal Law · Edited 18 Apr 2026</div>
+              <div class="draft-bar"><div class="bar-track"><div class="bar-fill" style="width:30%;"></div></div><span class="bar-pct">30%</span></div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="left">
+      <div class="mark">L</div>
+      <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    </div>
+    <div class="footer-links">
+      <a href="#">Collection notice & privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+      <a href="#">Sitemap</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+  // Profile dropdown
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

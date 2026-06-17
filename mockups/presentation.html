@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<!--
+  LAQ Practitioner Portal — Presentation deck
+  ============================================
+  Design rationale (~200 words):
+  This is a presenter-facing slide deck, not a portal screen, so it lives outside
+  the OOTB Experience Cloud constraint. The visual language, however, stays
+  aligned with the portal: LAQ navy #05325F for the title chrome, SLDS 2.0 type
+  scale and spacing, plain Australian English, and no celebratory imagery. The
+  deck uses a 16:9 slide frame (1280x720) with generous negative space so the
+  embedded mockup previews can breathe at half scale.
+  Navigation is keyboard-driven (Left/Right arrows, PageUp/PageDown, Home/End)
+  and mouse-driven via persistent Prev/Next controls — both of which meet WCAG
+  2.2 AA: visible focus rings, 4.5:1 contrast on body text, status conveyed
+  by icon + text. Each of the 23 screens gets a dedicated slide, grouped into
+  the 10 capability areas from the screen inventory and prefaced by a section
+  divider so the audience can track progress through the system.
+  Every screen slide embeds the actual mockup file via <iframe>, which means
+  the deck always reflects the latest mockup without a separate export step.
+  A scale transform shows the 1280-wide mockup at ~0.55 so it fits the
+  preview area without horizontal scroll. To the right of each preview we
+  list the persona, key moments, and the OOTB/custom component split.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAQ Practitioner Portal — Design walkthrough</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #05325F;
+    --sapphire: #09549F;
+    --sky: #0085B3;
+    --ink: #1A1A1A;
+    --muted: #54698D;
+    --border: #DDDBDA;
+    --surface: #FFFFFF;
+    --canvas: #F4F6F9;
+    --success: #2E844A;
+    --slide-w: 1280px;
+    --slide-h: 720px;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: system-ui, -apple-system, 'Segoe UI', 'SF Pro Text', sans-serif;
+    color: var(--ink);
+    background: #0A1726;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* ============ Stage ============ */
+  .stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+  }
+
+  .slide-viewport {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    flex-shrink: 0;
+    background: var(--surface);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    overflow: hidden;
+    border-radius: 4px;
+    transform-origin: center center;
+  }
+
+  .slide-scale {
+    position: absolute;
+    inset: 0;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    display: none;
+    flex-direction: column;
+    background: var(--surface);
+  }
+  .slide.is-active { display: flex; }
+
+  /* ============ Slide chrome ============ */
+  .slide-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 48px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .slide-header .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--navy);
+  }
+  .slide-header .divider {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+  }
+  .slide-header .step {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .slide-header .spacer { flex: 1; }
+  .slide-header .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .slide-header .brand-mark {
+    width: 28px;
+    height: 28px;
+    background: var(--navy);
+    color: #fff;
+    border-radius: 3px;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 48px;
+    overflow: hidden;
+  }
+
+  .slide-footer {
+    padding: 16px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .slide-footer .pager { margin-left: auto; }
+
+  /* ============ Cover slide ============ */
+  .cover {
+    background: linear-gradient(135deg, var(--navy) 0%, #02213F 100%);
+    color: #fff;
+    justify-content: flex-end;
+    padding: 64px;
+  }
+  .cover .kicker {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .cover .kicker .mark {
+    width: 36px;
+    height: 36px;
+    background: #fff;
+    color: var(--navy);
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .cover h1 {
+    font-size: 56px;
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    max-width: 900px;
+  }
+  .cover .lede {
+    font-size: 20px;
+    line-height: 1.45;
+    color: rgba(255,255,255,0.85);
+    max-width: 760px;
+    margin-bottom: 40px;
+  }
+  .cover .meta {
+    display: flex;
+    gap: 40px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+  }
+  .cover .meta strong {
+    display: block;
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  /* ============ Agenda slide ============ */
+  .agenda-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 40px;
+    margin-top: 16px;
+  }
+  .agenda-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--navy);
+    background: var(--canvas);
+  }
+  .agenda-item .num {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navy);
+    min-width: 32px;
+  }
+  .agenda-item .body { flex: 1; }
+  .agenda-item .title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .agenda-item .desc {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ============ Section divider ============ */
+  .section-divider {
+    background: var(--navy);
+    color: #fff;
+    justify-content: center;
+    padding: 0 80px;
+  }
+  .section-divider .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 18px;
+  }
+  .section-divider .chip .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sky);
+  }
+  .section-divider h2 {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    margin-bottom: 16px;
+  }
+  .section-divider p {
+    font-size: 18px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.85);
+    max-width: 720px;
+  }
+  .section-divider .tags {
+    display: flex;
+    gap: 10px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .section-divider .tag {
+    font-size: 12px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 999px;
+    color: rgba(255,255,255,0.9);
+  }
+
+  /* ============ Content slide ============ */
+  .content-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+    margin-bottom: 6px;
+  }
+  .content-subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  /* ============ Screen slide ============ */
+  .screen-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 32px;
+    flex: 1;
+    min-height: 0;
+  }
+  .preview {
+    background: var(--canvas);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .preview-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #EEF1F6;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .preview-strip .dots {
+    display: flex;
+    gap: 6px;
+  }
+  .preview-strip .dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #C9CED6;
+  }
+  .preview-strip .url {
+    flex: 1;
+    padding: 4px 10px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .preview-frame-holder {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+  }
+  .preview-frame-holder iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1440px;
+    height: 1200px;
+    border: 0;
+    transform-origin: top left;
+    pointer-events: none;
+    background: #fff;
+  }
+
+  .details {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow: auto;
+    padding-right: 4px;
+  }
+  .details .screen-id {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--sapphire);
+    text-transform: uppercase;
+  }
+  .details h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-top: 4px;
+    margin-bottom: 8px;
+  }
+  .details .lede {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .detail-block {
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+  }
+  .detail-block h4 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--navy);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .detail-block ul {
+    list-style: none;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .detail-block li {
+    position: relative;
+    padding-left: 14px;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+  .detail-block li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--sky);
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #E8EEF6;
+    color: var(--navy);
+    border: 1px solid #CFDAEA;
+  }
+  .badge.custom {
+    background: #FFF4E5;
+    color: #8A5200;
+    border-color: #F5D4A4;
+  }
+
+  /* ============ Closing slide ============ */
+  .closing {
+    background: linear-gradient(135deg, var(--navy) 0%, #02213F 100%);
+    color: #fff;
+    padding: 64px;
+    justify-content: center;
+  }
+  .closing h2 {
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    max-width: 900px;
+  }
+  .closing .next-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 32px;
+    max-width: 1100px;
+  }
+  .closing .next-item {
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+  }
+  .closing .next-item .kicker {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 10px;
+  }
+  .closing .next-item h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+  .closing .next-item p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.5;
+  }
+
+  /* ============ Principles slide ============ */
+  .principles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 8px;
+  }
+  .principle {
+    padding: 20px;
+    background: var(--canvas);
+    border-top: 3px solid var(--navy);
+  }
+  .principle h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .principle p {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  /* ============ Personas slide ============ */
+  .persona-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .persona {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .persona .role {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .persona h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .persona p {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  /* ============ Controls ============ */
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(10, 23, 38, 0.9);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 13px;
+    z-index: 100;
+  }
+  .controls button {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .controls button:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  .controls button:focus-visible {
+    outline: 2px solid var(--sky);
+    outline-offset: 2px;
+  }
+  .controls .counter {
+    min-width: 64px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .shortcut-hint {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    z-index: 100;
+  }
+
+  /* Progress bar */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--sky);
+    z-index: 100;
+    transition: width 0.3s ease;
+  }
+
+  @media print {
+    body { overflow: visible; background: #fff; }
+    .stage { position: static; padding: 0; }
+    .controls, .shortcut-hint, .progress { display: none; }
+    .slide-viewport {
+      box-shadow: none;
+      page-break-after: always;
+      width: 100%;
+      height: auto;
+    }
+    .slide { display: flex !important; position: static; }
+    .slide-scale { transform: none !important; position: static; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="shortcut-hint">Arrow keys to navigate&nbsp; · &nbsp;Home / End to jump</div>
+
+<div class="stage">
+  <div class="slide-viewport" id="viewport">
+    <div class="slide-scale" id="scale">
+
+      <!-- ========== Slide 1: Cover ========== -->
+      <section class="slide cover is-active" data-title="Cover">
+        <div>
+          <div class="kicker">
+            <span class="mark">LAQ</span>
+            Legal Aid Queensland · Practitioner Portal
+          </div>
+          <h1>A working portal for Queensland's legal practitioners</h1>
+          <p class="lede">
+            A walkthrough of 23 screens designed on Salesforce Experience Cloud,
+            ready for review before build. OOTB components where possible,
+            custom only where the brief demands it.
+          </p>
+          <div class="meta">
+            <div>
+              <strong>Programme</strong>
+              Practitioner Portal — Build 1
+            </div>
+            <div>
+              <strong>Stage</strong>
+              Design walkthrough · v0.9
+            </div>
+            <div>
+              <strong>Date</strong>
+              27 Apr 2026
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== Slide 2: Agenda ========== -->
+      <section class="slide" data-title="Agenda">
+        <header class="slide-header">
+          <span class="eyebrow">Agenda</span>
+          <span class="divider"></span>
+          <span class="step">What we're covering today</span>
+          <span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> Practitioner Portal</span>
+        </header>
+        <div class="slide-body">
+          <h2 class="content-title">Ten capability areas, twenty-three screens</h2>
+          <p class="content-subtitle">Grouped the way the portal navigation groups them, so we can review feature-by-feature.</p>
+          <div class="agenda-grid">
+            <div class="agenda-item"><div class="num">1</div><div class="body"><div class="title">Access &amp; Identity</div><div class="desc">Sign-in for external users and LAQ staff, plus the privacy notice.</div></div></div>
+            <div class="agenda-item"><div class="num">2</div><div class="body"><div class="title">Home &amp; Navigation</div><div class="desc">The daily landing page and global search.</div></div></div>
+            <div class="agenda-item"><div class="num">3</div><div class="body"><div class="title">Applications</div><div class="desc">Lodging, drafts, extensions and submission confirmation.</div></div></div>
+            <div class="agenda-item"><div class="num">4</div><div class="body"><div class="title">Grant of Aid Files</div><div class="desc">The working inbox plus five file-detail views.</div></div></div>
+            <div class="agenda-item"><div class="num">5</div><div class="body"><div class="title">Offers</div><div class="desc">Declining offers with structured reason codes.</div></div></div>
+            <div class="agenda-item"><div class="num">6</div><div class="body"><div class="title">Invoicing</div><div class="desc">Submitting invoices and tracking the list, with cancel flow.</div></div></div>
+            <div class="agenda-item"><div class="num">7</div><div class="body"><div class="title">Profile &amp; Users</div><div class="desc">Practice details, ABN, banking, licence management.</div></div></div>
+            <div class="agenda-item"><div class="num">8</div><div class="body"><div class="title">Knowledge</div><div class="desc">Searchable handbooks, policies, case law and CPD.</div></div></div>
+            <div class="agenda-item"><div class="num">9</div><div class="body"><div class="title">Notifications</div><div class="desc">Inbox plus per-event channel preferences.</div></div></div>
+            <div class="agenda-item"><div class="num">10</div><div class="body"><div class="title">Administration</div><div class="desc">Audit log and access overview for LAQ admins.</div></div></div>
+          </div>
+        </div>
+        <footer class="slide-footer">
+          <span>LAQ Practitioner Portal · Design walkthrough</span>
+          <span class="pager">Slide 2</span>
+        </footer>
+      </section>
+
+      <!-- ========== Slide 3: Personas ========== -->
+      <section class="slide" data-title="Personas">
+        <header class="slide-header">
+          <span class="eyebrow">Who we're designing for</span>
+          <span class="divider"></span>
+          <span class="step">Seven personas</span>
+          <span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> Practitioner Portal</span>
+        </header>
+        <div class="slide-body">
+          <h2 class="content-title">Seven personas, one portal</h2>
+          <p class="content-subtitle">Each screen is tagged to the personas it serves. Access paths and terminology shift accordingly.</p>
+          <div class="persona-grid">
+            <div class="persona"><div class="role">External</div><h4>Preferred Supplier</h4><p>Panel practitioner in private practice. Lodging applications, invoicing and managing many files at once.</p></div>
+            <div class="persona"><div class="role">Internal</div><h4>In-House Solicitor</h4><p>LAQ employee. SSO sign-in, structured offer declines, electronic outcome capture.</p></div>
+            <div class="persona"><div class="role">External</div><h4>CLC Practitioner</h4><p>Community legal centre staff. Efficient lodging, portal messaging, knowledge access.</p></div>
+            <div class="persona"><div class="role">External</div><h4>External Barrister</h4><p>Briefed by LAQ. Practice details, electronic invoicing and document upload.</p></div>
+            <div class="persona"><div class="role">External</div><h4>FDRP</h4><p>Family dispute resolution practitioner. Sessions, outcomes, invoicing, CPD access.</p></div>
+            <div class="persona"><div class="role">Delegated</div><h4>Authorised Support Staff</h4><p>Paralegal or admin acting on behalf of a practitioner, within licence limits.</p></div>
+          </div>
+        </div>
+        <footer class="slide-footer">
+          <span>Detail in <code>brief/personas_jtbd.md</code></span>
+          <span class="pager">Slide 3</span>
+        </footer>
+      </section>
+
+      <!-- ========== Slide 4: Design approach ========== -->
+      <section class="slide" data-title="Design approach">
+        <header class="slide-header">
+          <span class="eyebrow">Design approach</span>
+          <span class="divider"></span>
+          <span class="step">OOTB first · SLDS 2.0 · WCAG 2.2 AA</span>
+          <span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> Practitioner Portal</span>
+        </header>
+        <div class="slide-body">
+          <h2 class="content-title">Three principles we've held to</h2>
+          <p class="content-subtitle">These came from the budget conversation in December. They've shaped every screen that follows.</p>
+          <div class="principles-grid">
+            <div class="principle">
+              <h4>1. OOTB first</h4>
+              <p>Every region of every screen asked: can a standard Experience Cloud component do this? If yes, we use it, even when a bespoke design would be prettier. Custom LWCs are flagged and justified in each handoff spec.</p>
+            </div>
+            <div class="principle">
+              <h4>2. SLDS 2.0 baseline, LAQ brand override</h4>
+              <p>We keep SLDS 2.0 type, spacing, buttons and corner radii untouched. LAQ brand is applied as Experience Cloud theme only: logo, primary colour <code style="background:#05325F;color:#fff;padding:1px 4px;border-radius:2px;">#05325F</code>, and a system sans-serif.</p>
+            </div>
+            <div class="principle">
+              <h4>3. WCAG 2.2 AA, plain Australian English</h4>
+              <p>Status is conveyed by icon and text, never colour alone. Visible focus states. 4.5:1 body contrast. No marketing language, no emojis, no celebratory imagery on government service screens.</p>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer">
+          <span>Full detail in <code>brief/01_system_prompt.md</code></span>
+          <span class="pager">Slide 4</span>
+        </footer>
+      </section>
+
+      <!-- ========== SECTION 1: Access & Identity ========== -->
+      <section class="slide section-divider" data-title="Section: Access & Identity">
+        <div class="chip"><span class="dot"></span>Section 1 of 10 · Screens S01–S03</div>
+        <h2>Access &amp; Identity</h2>
+        <p>How external practitioners and LAQ staff arrive at the portal, and how we meet the privacy obligation on first use.</p>
+        <div class="tags"><span class="tag">MFA</span><span class="tag">SSO</span><span class="tag">Collection notice</span></div>
+      </section>
+
+      <!-- S01 -->
+      <section class="slide" data-title="S01 Sign-in (MFA)" data-screen="S01_signin_mfa.html">
+        <header class="slide-header">
+          <span class="eyebrow">Access &amp; Identity</span><span class="divider"></span>
+          <span class="step">Screen 1 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S01</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/sign-in</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S01_signin_mfa.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S01</div>
+                <h3>Sign-in (MFA) — external practitioners</h3>
+                <p class="lede">Primary entry point for Preferred Suppliers, CLCs, barristers, FDRPs and support staff. Password plus a 6-digit code, with a 30-day device trust option.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Inline field validation before the MFA step appears</li>
+                  <li>Resend-code timer and alternative method link</li>
+                  <li>Independent 'Forgot password' path that never blocks MFA</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">CLC</span><span class="badge">Barrister</span><span class="badge">FDRP</span><span class="badge">Support staff</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Login Form</span><span class="badge custom">Custom MFA step</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-302, FR-B1-303</span><span class="pager">Slide 6</span></footer>
+      </section>
+
+      <!-- S02 -->
+      <section class="slide" data-title="S02 Sign-in (SSO)" data-screen="S02_signin_sso.html">
+        <header class="slide-header">
+          <span class="eyebrow">Access &amp; Identity</span><span class="divider"></span>
+          <span class="step">Screen 2 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S02</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/sign-in-laq</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S02_signin_sso.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S02</div>
+                <h3>Sign-in (SSO) — In-House Solicitor</h3>
+                <p class="lede">LAQ-internal users bypass MFA and sign in with their LAQ identity. Consistent chrome with S01 so users know they're in the right place.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Single 'Sign in with LAQ' brand button — no password fields</li>
+                  <li>Clear caption explaining who this option is for</li>
+                  <li>Escape hatch back to S01 for misrouted users</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">In-House Solicitor</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Login Form (IdP)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-302-A</span><span class="pager">Slide 7</span></footer>
+      </section>
+
+      <!-- S03 -->
+      <section class="slide" data-title="S03 Collection notice" data-screen="S03_collection_notice.html">
+        <header class="slide-header">
+          <span class="eyebrow">Access &amp; Identity</span><span class="divider"></span>
+          <span class="step">Screen 3 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S03</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/privacy</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S03_collection_notice.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S03</div>
+                <h3>Collection notice &amp; privacy statement</h3>
+                <p class="lede">First-run modal and permanently linked page. Plain-English summary first, full notice beneath.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Scrollable statement with version and last-updated stamp</li>
+                  <li>'I acknowledge' primary action, PDF download secondary</li>
+                  <li>Persistent footer link on every authenticated page</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All portal users</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB CMS Content</span><span class="badge">OOTB Modal</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>User Story #160</span><span class="pager">Slide 8</span></footer>
+      </section>
+
+      <!-- ========== SECTION 2: Home & Navigation ========== -->
+      <section class="slide section-divider" data-title="Section: Home & Navigation">
+        <div class="chip"><span class="dot"></span>Section 2 of 10 · Screens S04–S05</div>
+        <h2>Home &amp; Navigation</h2>
+        <p>The daily landing page and the global search. The two screens practitioners hit most often.</p>
+        <div class="tags"><span class="tag">Dashboard</span><span class="tag">Global search</span></div>
+      </section>
+
+      <!-- S04 -->
+      <section class="slide" data-title="S04 Home dashboard" data-screen="S04_dashboard.html">
+        <header class="slide-header">
+          <span class="eyebrow">Home &amp; Navigation</span><span class="divider"></span>
+          <span class="step">Screen 4 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S04</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/home</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S04_dashboard.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S04</div>
+                <h3>Home dashboard</h3>
+                <p class="lede">Default landing page. Surfaces what needs attention today — not what's nice to know.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Firm-location context switcher (top)</li>
+                  <li>KPI strip: active, drafts, awaiting LAQ, invoices, notifications</li>
+                  <li>'Needs your attention' list above recent files</li>
+                  <li>Shortcut tiles for the four most common tasks</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">CLC</span><span class="badge">In-House</span><span class="badge">Barrister</span><span class="badge">FDRP</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Tiles</span><span class="badge">OOTB Record List</span><span class="badge custom">Custom KPI strip</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-324, FR-B1-326, FR-B1-308</span><span class="pager">Slide 10</span></footer>
+      </section>
+
+      <!-- S05 -->
+      <section class="slide" data-title="S05 Global search" data-screen="S05_search_results.html">
+        <header class="slide-header">
+          <span class="eyebrow">Home &amp; Navigation</span><span class="divider"></span>
+          <span class="step">Screen 5 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S05</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/search?q=nguyen</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S05_search_results.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S05</div>
+                <h3>Global search results</h3>
+                <p class="lede">Unified search across files, clients, correspondence, decisions and knowledge articles.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Predictive suggestions grouped by type from the top-bar search</li>
+                  <li>Left filter rail: type, status, date, location, Q-number</li>
+                  <li>Matched terms highlighted in result snippets</li>
+                  <li>Saved-searches panel and distinct zero-results treatment</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All users</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Global Search Results</span><span class="badge">OOTB Search Bar</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-308, FR-B1-311</span><span class="pager">Slide 11</span></footer>
+      </section>
+
+      <!-- ========== SECTION 3: Applications ========== -->
+      <section class="slide section-divider" data-title="Section: Applications">
+        <div class="chip"><span class="dot"></span>Section 3 of 10 · Screens S06–S09</div>
+        <h2>Applications</h2>
+        <p>Lodging a grant of aid, picking up drafts, the submitted confirmation, and extension requests.</p>
+        <div class="tags"><span class="tag">OmniScript</span><span class="tag">Autosave</span><span class="tag">Extensions</span></div>
+      </section>
+
+      <!-- S06 -->
+      <section class="slide" data-title="S06 Lodge application" data-screen="S06_lodge_application.html">
+        <header class="slide-header">
+          <span class="eyebrow">Applications</span><span class="divider"></span>
+          <span class="step">Screen 6 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S06</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/applications/new</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S06_lodge_application.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S06</div>
+                <h3>Lodge new application — multi-step form</h3>
+                <p class="lede">Dynamic, guided, autosaving application built on OmniScript. The most complex screen in the portal.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Step indicator with completion ticks and conditional-step pills</li>
+                  <li>Pre-fill from client record (editable where allowed)</li>
+                  <li>Autosave chip ('Saved 12 seconds ago')</li>
+                  <li>Persistent footer: Save &amp; exit, Previous, Save &amp; continue</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">In-House</span><span class="badge">CLC</span><span class="badge">Support staff</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB OmniScript</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-312, 314, 315, 316, 317, 070</span><span class="pager">Slide 13</span></footer>
+      </section>
+
+      <!-- S07 -->
+      <section class="slide" data-title="S07 Draft applications" data-screen="S07_draft_applications.html">
+        <header class="slide-header">
+          <span class="eyebrow">Applications</span><span class="divider"></span>
+          <span class="step">Screen 7 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S07</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/applications/drafts</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S07_draft_applications.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S07</div>
+                <h3>Draft applications list</h3>
+                <p class="lede">Critical: complex submissions stretch over days. Practitioners need to pick drafts up exactly where they left them.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Columns: client, type, last edited, progress %, editor, status</li>
+                  <li>Row actions: Continue, Delete, Duplicate</li>
+                  <li>Bulk delete with confirmation; empty-state CTA</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">CLC</span><span class="badge">In-House</span><span class="badge">Support staff</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record List</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-314</span><span class="pager">Slide 14</span></footer>
+      </section>
+
+      <!-- S08 -->
+      <section class="slide" data-title="S08 Submitted confirmation" data-screen="S08_application_submitted.html">
+        <header class="slide-header">
+          <span class="eyebrow">Applications</span><span class="divider"></span>
+          <span class="step">Screen 8 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S08</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/applications/submitted</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S08_application_submitted.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S08</div>
+                <h3>Application submitted confirmation</h3>
+                <p class="lede">The terminal success screen that issues the unique reference number the practitioner can quote. Restrained, not celebratory — this is a government service.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Reference number in prominent, copyable format</li>
+                  <li>3-step timeline: received, assessed, decision</li>
+                  <li>Email copy, print, return home, start another</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">CLC</span><span class="badge">In-House</span><span class="badge">Support staff</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Flow Finish Screen</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-410</span><span class="pager">Slide 15</span></footer>
+      </section>
+
+      <!-- S09 -->
+      <section class="slide" data-title="S09 Extension request" data-screen="S09_extension_request.html">
+        <header class="slide-header">
+          <span class="eyebrow">Applications</span><span class="divider"></span>
+          <span class="step">Screen 9 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S09</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/files/Q-2026-000824/extend</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S09_extension_request.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S09</div>
+                <h3>Extension request</h3>
+                <p class="lede">Launched from a file as an overlay, expandable to full page for complex extensions. Can bundle an invoice submission.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>File context panel (client, Q-number, scope, conditions)</li>
+                  <li>Reason, hours/cost, supporting documents</li>
+                  <li>'Also submit invoice' toggle expands an invoice panel</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">In-House</span><span class="badge">CLC</span><span class="badge">Support staff</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Flow</span><span class="badge">OOTB File Upload</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-313, FR-B1-330</span><span class="pager">Slide 16</span></footer>
+      </section>
+
+      <!-- ========== SECTION 4: Grant of Aid Files ========== -->
+      <section class="slide section-divider" data-title="Section: Grant of Aid Files">
+        <div class="chip"><span class="dot"></span>Section 4 of 10 · Screens S10–S15</div>
+        <h2>Grant of Aid Files</h2>
+        <p>The working inbox, the file detail, correspondence and documents, outcomes capture, and historical decision letters.</p>
+        <div class="tags"><span class="tag">Record Detail</span><span class="tag">Messaging</span><span class="tag">File Upload</span><span class="tag">Decision letters</span></div>
+      </section>
+
+      <!-- S10 -->
+      <section class="slide" data-title="S10 My files" data-screen="S10_my_files.html">
+        <header class="slide-header">
+          <span class="eyebrow">Grant of Aid Files</span><span class="divider"></span>
+          <span class="step">Screen 10 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S10</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/files</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S10_my_files.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S10</div>
+                <h3>My files — list view</h3>
+                <p class="lede">The practitioner's working inbox of grant files with strong search and filter. Saved filters for Active, Archived, Awaiting action, Closed.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>List tabs for status buckets</li>
+                  <li>Row hover reveals Open, Extension, Invoice, Message</li>
+                  <li>Density toggle and column chooser</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All practitioners</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record List</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-308</span><span class="pager">Slide 18</span></footer>
+      </section>
+
+      <!-- S11 -->
+      <section class="slide" data-title="S11 File detail" data-screen="S11_file_detail.html">
+        <header class="slide-header">
+          <span class="eyebrow">Grant of Aid Files</span><span class="divider"></span>
+          <span class="step">Screen 11 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S11</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/files/Q-2026-000824</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S11_file_detail.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S11</div>
+                <h3>File detail — summary view</h3>
+                <p class="lede">The single source of truth for a grant: scope, commitment, conditions, correspondence, documents, invoices, outcomes.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Highlights panel with Q-number, status, scope, conditions</li>
+                  <li>Tabs: Summary, Correspondence, Documents, Invoices, Outcomes, Activity</li>
+                  <li>Quick actions: Request extension, Submit invoice, Upload, Message</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All practitioners</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record Detail</span><span class="badge">OOTB Tabs</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-325, 327, 319, 320, 321</span><span class="pager">Slide 19</span></footer>
+      </section>
+
+      <!-- S12 -->
+      <section class="slide" data-title="S12 Correspondence" data-screen="S12_correspondence.html">
+        <header class="slide-header">
+          <span class="eyebrow">Grant of Aid Files</span><span class="divider"></span>
+          <span class="step">Screen 12 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S12</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/files/Q-2026-000824/correspondence</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S12_correspondence.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S12</div>
+                <h3>File detail — Correspondence</h3>
+                <p class="lede">Two-way portal messaging tied to the file, replacing ad-hoc email. The file linkage is visually unbreakable.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Thread list with unread badges and channel icons</li>
+                  <li>Compose with light rich-text, attachment picker, scoped recipients</li>
+                  <li>'Linked to file' breadcrumb on every message</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All practitioners</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Messaging</span><span class="badge">OOTB Feed</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-321</span><span class="pager">Slide 20</span></footer>
+      </section>
+
+      <!-- S13 -->
+      <section class="slide" data-title="S13 Documents" data-screen="S13_documents.html">
+        <header class="slide-header">
+          <span class="eyebrow">Grant of Aid Files</span><span class="divider"></span>
+          <span class="step">Screen 13 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S13</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/files/Q-2026-000824/documents</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S13_documents.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S13</div>
+                <h3>File detail — Documents &amp; uploads</h3>
+                <p class="lede">Upload and view PDFs, DOCX, JPEGs and PNGs, linked to the file with category tagging.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Drop zone with per-file progress and error recovery</li>
+                  <li>Document cards: thumbnail, type badge, size, uploader</li>
+                  <li>Inline preview for PDF and images; category tagging</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All practitioners</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB File Upload</span><span class="badge">OOTB Related List</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-319, FR-B1-320</span><span class="pager">Slide 21</span></footer>
+      </section>
+
+      <!-- S14 -->
+      <section class="slide" data-title="S14 Outcomes" data-screen="S14_outcomes.html">
+        <header class="slide-header">
+          <span class="eyebrow">Grant of Aid Files</span><span class="divider"></span>
+          <span class="step">Screen 14 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S14</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/files/Q-2026-000824/outcomes</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S14_outcomes.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S14</div>
+                <h3>File detail — Outcomes (In-House focus)</h3>
+                <p class="lede">Electronic capture of matter outcomes so the grant file reflects legal progress. Outcome types drawn from the LAQ taxonomy.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Chronological outcomes timeline, most recent first</li>
+                  <li>'Record outcome' form: type, date, court, notes, supporting doc</li>
+                  <li>Edit/cancel within an allowed window</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">In-House Solicitor</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record Form</span><span class="badge">OOTB Related List</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-323</span><span class="pager">Slide 22</span></footer>
+      </section>
+
+      <!-- S15 -->
+      <section class="slide" data-title="S15 Decision letters" data-screen="S15_decision_letters.html">
+        <header class="slide-header">
+          <span class="eyebrow">Grant of Aid Files</span><span class="divider"></span>
+          <span class="step">Screen 15 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S15</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/decision-letters</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S15_decision_letters.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S15</div>
+                <h3>Historical decision letters viewer</h3>
+                <p class="lede">Read-only archive of decision letters and related documents for the assigned firm.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Letter list grouped by year, searchable by client / Q-number</li>
+                  <li>Inline PDF reader with metadata strip</li>
+                  <li>'Acknowledge receipt' where required</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All practitioners</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record List</span><span class="badge custom">Custom PDF viewer</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-327</span><span class="pager">Slide 23</span></footer>
+      </section>
+
+      <!-- ========== SECTION 5: Offers ========== -->
+      <section class="slide section-divider" data-title="Section: Offers">
+        <div class="chip"><span class="dot"></span>Section 5 of 10 · Screen S16</div>
+        <h2>Offers</h2>
+        <p>Structured decline with reason codes, to satisfy audit and reporting obligations.</p>
+        <div class="tags"><span class="tag">Offer management</span><span class="tag">Reason codes</span></div>
+      </section>
+
+      <!-- S16 -->
+      <section class="slide" data-title="S16 Decline offer" data-screen="S16_decline_offer.html">
+        <header class="slide-header">
+          <span class="eyebrow">Offers</span><span class="divider"></span>
+          <span class="step">Screen 16 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S16</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/offers/OFFER-2026-00321/decline</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S16_decline_offer.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S16</div>
+                <h3>Decline an offer — structured form</h3>
+                <p class="lede">Modal over the offer detail; full page on mobile. Reason codes: conflict, capacity, other.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Offer context: client, matter, offered by</li>
+                  <li>Required reason group with conditional sub-reason</li>
+                  <li>Optional free-text note; confirmation on submit</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">In-House Solicitor</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Flow</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-143</span><span class="pager">Slide 25</span></footer>
+      </section>
+
+      <!-- ========== SECTION 6: Invoicing ========== -->
+      <section class="slide section-divider" data-title="Section: Invoicing">
+        <div class="chip"><span class="dot"></span>Section 6 of 10 · Screens S17–S18</div>
+        <h2>Invoicing</h2>
+        <p>Electronic invoice submission and tracking, with a self-service cancel path that removes email to Accounts Payable.</p>
+        <div class="tags"><span class="tag">Line items</span><span class="tag">Scope validation</span><span class="tag">Cancel flow</span></div>
+      </section>
+
+      <!-- S17 -->
+      <section class="slide" data-title="S17 Submit invoice" data-screen="S17_submit_invoice.html">
+        <header class="slide-header">
+          <span class="eyebrow">Invoicing</span><span class="divider"></span>
+          <span class="step">Screen 17 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S17</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/invoices/new</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S17_submit_invoice.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S17</div>
+                <h3>Submit invoice</h3>
+                <p class="lede">Electronic invoice against an approved grant, validated in real time against the remaining scope.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Line items table: task code, description, date, units, rate, amount</li>
+                  <li>Right-side summary with scope remaining in real time</li>
+                  <li>'Request extension with this invoice' optional toggle</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">CLC</span><span class="badge">Barrister</span><span class="badge">FDRP</span><span class="badge">Support staff</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB OmniScript</span><span class="badge custom">Custom scope-remaining panel</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-328, FR-B1-330</span><span class="pager">Slide 27</span></footer>
+      </section>
+
+      <!-- S18 -->
+      <section class="slide" data-title="S18 Invoice list" data-screen="S18_invoice_list.html">
+        <header class="slide-header">
+          <span class="eyebrow">Invoicing</span><span class="divider"></span>
+          <span class="step">Screen 18 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S18</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/invoices</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S18_invoice_list.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S18</div>
+                <h3>Invoice list &amp; cancel invoice</h3>
+                <p class="lede">Track submitted invoices and cancel them with a reason — without emailing Accounts Payable.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Status badges: Submitted, Under review, Approved, Paid, Reduced, Refused, Cancelled</li>
+                  <li>Row action: Cancel (enabled only where allowed)</li>
+                  <li>Cancel modal with reason dropdown and audit capture</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">In-House</span><span class="badge">CLC</span><span class="badge">Barrister</span><span class="badge">FDRP</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record List</span><span class="badge">OOTB Flow</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-334</span><span class="pager">Slide 28</span></footer>
+      </section>
+
+      <!-- ========== SECTION 7: Profile & Users ========== -->
+      <section class="slide section-divider" data-title="Section: Profile & Users">
+        <div class="chip"><span class="dot"></span>Section 7 of 10 · Screens S19–S20</div>
+        <h2>Profile &amp; Users</h2>
+        <p>Practice details the firm owns, and licence management the firm admin controls.</p>
+        <div class="tags"><span class="tag">ABN &amp; banking</span><span class="tag">Delegated access</span><span class="tag">Licence cap</span></div>
+      </section>
+
+      <!-- S19 -->
+      <section class="slide" data-title="S19 Practice details" data-screen="S19_practice_details.html">
+        <header class="slide-header">
+          <span class="eyebrow">Profile</span><span class="divider"></span>
+          <span class="step">Screen 19 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S19</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/practice</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S19_practice_details.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S19</div>
+                <h3>Practice details — contact, ABN, banking</h3>
+                <p class="lede">Self-service update of contact, ABN and bank details so payments are processed accurately.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Sectioned settings page, each section individually saveable</li>
+                  <li>Masked bank numbers with 'reveal' control</li>
+                  <li>Changes requiring LAQ verification show a pending-review state</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Preferred Supplier</span><span class="badge">CLC</span><span class="badge">Barrister</span><span class="badge">FDRP</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record Form</span><span class="badge">OOTB Related List</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-322</span><span class="pager">Slide 30</span></footer>
+      </section>
+
+      <!-- S20 -->
+      <section class="slide" data-title="S20 User management" data-screen="S20_user_management.html">
+        <header class="slide-header">
+          <span class="eyebrow">Profile</span><span class="divider"></span>
+          <span class="step">Screen 20 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S20</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/users</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S20_user_management.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S20</div>
+                <h3>User &amp; licence management (firm admin)</h3>
+                <p class="lede">Firm-level console for delegating access, enforcing the 3-licence cap, and requesting additional licences from LAQ.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Licence meter per firm-location, colour-coded and labelled</li>
+                  <li>Invite user modal with role and location pickers</li>
+                  <li>Delegation approval flow — the practitioner must approve</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">Principal</span><span class="badge">Support staff</span><span class="badge">LAQ Admin</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record List</span><span class="badge">OOTB Flow</span><span class="badge custom">Custom licence meter</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-304, FR-B1-304-A</span><span class="pager">Slide 31</span></footer>
+      </section>
+
+      <!-- ========== SECTION 8: Knowledge ========== -->
+      <section class="slide section-divider" data-title="Section: Knowledge">
+        <div class="chip"><span class="dot"></span>Section 8 of 10 · Screen S21</div>
+        <h2>Knowledge</h2>
+        <p>Searchable library of grants policies, handbooks, case law, CPD events and LAQ articles.</p>
+        <div class="tags"><span class="tag">Handbooks</span><span class="tag">Case law</span><span class="tag">CPD</span></div>
+      </section>
+
+      <!-- S21 -->
+      <section class="slide" data-title="S21 Knowledge Base" data-screen="S21_knowledge_base.html">
+        <header class="slide-header">
+          <span class="eyebrow">Knowledge</span><span class="divider"></span>
+          <span class="step">Screen 21 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S21</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/knowledge</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S21_knowledge_base.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S21</div>
+                <h3>Knowledge Base &amp; resources</h3>
+                <p class="lede">Editorial landing with a hero search, featured content, category tiles, and an article reader with 'was this helpful?' feedback.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Featured: handbook updates, CPD events, recent LAQ articles</li>
+                  <li>Category tiles: Policies, Handbooks, Case law, CPD, Articles</li>
+                  <li>Bookmarking and recently viewed</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All practitioners</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB CMS Collection</span><span class="badge">OOTB Search Bar</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-310, FR-B1-310-A</span><span class="pager">Slide 33</span></footer>
+      </section>
+
+      <!-- ========== SECTION 9: Notifications ========== -->
+      <section class="slide section-divider" data-title="Section: Notifications">
+        <div class="chip"><span class="dot"></span>Section 9 of 10 · Screen S22</div>
+        <h2>Notifications</h2>
+        <p>Central inbox plus per-event channel preferences — in-portal, email and SMS.</p>
+        <div class="tags"><span class="tag">Inbox</span><span class="tag">Channel matrix</span><span class="tag">Quiet hours</span></div>
+      </section>
+
+      <!-- S22 -->
+      <section class="slide" data-title="S22 Notifications" data-screen="S22_notifications.html">
+        <header class="slide-header">
+          <span class="eyebrow">Notifications</span><span class="divider"></span>
+          <span class="step">Screen 22 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S22</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/practitioners/notifications</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S22_notifications.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S22</div>
+                <h3>Notifications centre &amp; channel preferences</h3>
+                <p class="lede">Two-pane notifications list with a detail view, plus a separate preferences page with a per-event channel matrix.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>Grouped by Today / Earlier with type badges</li>
+                  <li>Deep links from notifications into file, invoice, etc.</li>
+                  <li>Preferences matrix: event types × channels</li>
+                  <li>Quiet-hours setting</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">All users</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Notifications</span><span class="badge">OOTB Record Form</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-326</span><span class="pager">Slide 35</span></footer>
+      </section>
+
+      <!-- ========== SECTION 10: Administration ========== -->
+      <section class="slide section-divider" data-title="Section: Administration">
+        <div class="chip"><span class="dot"></span>Section 10 of 10 · Screen S23</div>
+        <h2>Administration</h2>
+        <p>Admin shell with visibly distinct chrome so it can never be mistaken for a practitioner-facing screen.</p>
+        <div class="tags"><span class="tag">Audit log</span><span class="tag">Access overview</span><span class="tag">Compliance KPIs</span></div>
+      </section>
+
+      <!-- S23 -->
+      <section class="slide" data-title="S23 Admin audit" data-screen="S23_admin_audit.html">
+        <header class="slide-header">
+          <span class="eyebrow">Administration</span><span class="divider"></span>
+          <span class="step">Screen 23 of 23</span><span class="spacer"></span>
+          <span class="brand"><span class="brand-mark">LAQ</span> S23</span>
+        </header>
+        <div class="slide-body">
+          <div class="screen-layout">
+            <div class="preview">
+              <div class="preview-strip"><div class="dots"><span></span><span></span><span></span></div><div class="url">laq.qld.gov.au/admin/audit</div></div>
+              <div class="preview-frame-holder"><iframe data-src="S23_admin_audit.html" loading="lazy"></iframe></div>
+            </div>
+            <div class="details">
+              <div>
+                <div class="screen-id">S23</div>
+                <h3>Admin audit log &amp; access overview</h3>
+                <p class="lede">Audit all user actions and surface WCAG, licence and privacy compliance at a glance. Darker chrome sets this context apart.</p>
+              </div>
+              <div class="detail-block">
+                <h4>Key moments</h4>
+                <ul>
+                  <li>KPI strip: active users, licences used, WCAG issues, privacy acks</li>
+                  <li>Audit log: actor, acting-on-behalf-of, action, target, IP, result</li>
+                  <li>Export (CSV/JSON) with audit-reason prompt</li>
+                  <li>Access overview of delegated relationships</li>
+                </ul>
+              </div>
+              <div class="detail-block">
+                <h4>Personas</h4>
+                <div class="badges"><span class="badge">LAQ System Administrator</span></div>
+              </div>
+              <div class="detail-block">
+                <h4>Components</h4>
+                <div class="badges"><span class="badge">OOTB Record List</span><span class="badge custom">Custom compliance KPI strip</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span>FR-B1-306, FR-B1-305</span><span class="pager">Slide 37</span></footer>
+      </section>
+
+      <!-- ========== Closing slide ========== -->
+      <section class="slide closing" data-title="Next steps">
+        <div>
+          <h2>Next steps after this walkthrough</h2>
+          <p style="color:rgba(255,255,255,0.85);font-size:18px;line-height:1.5;max-width:900px;">
+            We have 23 screens designed, annotated, and ready for the next round
+            of review. Here's what we'd like from the room before we hand off to build.
+          </p>
+          <div class="next-grid">
+            <div class="next-item">
+              <div class="kicker">This week</div>
+              <h4>Stakeholder feedback</h4>
+              <p>Written comments on each screen by EOB Friday — anything that would change the build estimate.</p>
+            </div>
+            <div class="next-item">
+              <div class="kicker">Next week</div>
+              <h4>Accessibility audit</h4>
+              <p>External WCAG 2.2 AA review of the mockups before the first build sprint begins.</p>
+            </div>
+            <div class="next-item">
+              <div class="kicker">Sprint 0</div>
+              <h4>Component spike</h4>
+              <p>Dev team confirms the 3 flagged custom LWCs (KPI strips, PDF viewer, scope panel) can ship in Build 1.</p>
+            </div>
+          </div>
+          <div style="margin-top:40px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.2);font-size:14px;color:rgba(255,255,255,0.7);">
+            Mockups: <code>mockups/</code> · Handoff specs: <code>handoff/</code> · Briefs: <code>brief/screens/</code>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="controls" role="toolbar" aria-label="Slide controls">
+  <button type="button" id="prev" aria-label="Previous slide">Prev</button>
+  <span class="counter" id="counter">1 / 38</span>
+  <button type="button" id="next" aria-label="Next slide">Next</button>
+</div>
+
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  const viewport = document.getElementById('viewport');
+  const scale = document.getElementById('scale');
+  let current = 0;
+
+  // Lazy load iframe when slide becomes active (preserves bandwidth and avoids 23 parallel loads).
+  function ensureLoaded(slide) {
+    const iframe = slide.querySelector('iframe[data-src]');
+    if (iframe && !iframe.src) {
+      iframe.src = iframe.dataset.src;
+    }
+    // Scale the embedded mockup to fit its container.
+    if (iframe) {
+      requestAnimationFrame(function () {
+        const holder = iframe.parentElement;
+        const scaleX = holder.clientWidth / 1440;
+        const scaleY = holder.clientHeight / 1200;
+        const s = Math.max(scaleX, scaleY); // cover — we clip overflow
+        iframe.style.transform = 'scale(' + s.toFixed(3) + ')';
+        iframe.style.width = (holder.clientWidth / s) + 'px';
+        iframe.style.height = (holder.clientHeight / s) + 'px';
+      });
+    }
+  }
+
+  function show(i) {
+    current = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach(function (s, idx) {
+      s.classList.toggle('is-active', idx === current);
+    });
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+    progress.style.width = ((current + 1) / slides.length * 100) + '%';
+    ensureLoaded(slides[current]);
+    // Pre-load the next slide's iframe too so it's ready.
+    if (slides[current + 1]) ensureLoaded(slides[current + 1]);
+    // Update URL hash for shareable deep links.
+    if (history.replaceState) {
+      history.replaceState(null, '', '#' + (current + 1));
+    }
+  }
+
+  function fitViewport() {
+    const w = window.innerWidth - 48;
+    const h = window.innerHeight - 48;
+    const s = Math.min(w / 1280, h / 720, 1);
+    viewport.style.transform = 'scale(' + s + ')';
+    // Re-fit active iframe.
+    ensureLoaded(slides[current]);
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(current + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(current - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { show(0); e.preventDefault(); }
+    else if (e.key === 'End') { show(slides.length - 1); e.preventDefault(); }
+  });
+  prev.addEventListener('click', function () { show(current - 1); });
+  next.addEventListener('click', function () { show(current + 1); });
+  window.addEventListener('resize', fitViewport);
+
+  // Deep link from hash (e.g. #5 jumps to slide 5).
+  const hash = parseInt(window.location.hash.replace('#', ''), 10);
+  if (!isNaN(hash)) current = hash - 1;
+
+  fitViewport();
+  show(current);
+})();
+</script>
+
+</body>
+</html>

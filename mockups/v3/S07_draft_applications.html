@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<!--
+  S07 — Draft applications list — v3
+  =====================================
+  Design rationale (~200 words):
+
+  Layout: LWR Single-Column. A full-width OOtB Record List bound to the
+  Application__c object, filtered to the current user's drafts. The list is
+  sortable, selectable and paged natively by Experience Cloud.
+
+  Top strip carries the primary "New application" CTA (navy sapphire),
+  filter chips (OOtB), and a muted bulk-delete button that activates only
+  when rows are selected. The table uses the v3 data-table pattern: subtle
+  blue-grey header band, navy-underlined client names signalling row
+  affordance, Q-style monospaced draft references. A progress bar column
+  shows how far through the OmniScript each draft has been taken.
+
+  Row actions (Continue / Duplicate / Delete) live in a kebab menu on hover.
+  The bulk-delete flow uses an OOtB confirmation dialog. The empty state —
+  "No drafts yet" — is shown in a muted surface card with the single New
+  application CTA, matching the brief.
+
+  Accessibility: table uses proper thead/tbody, row checkboxes are keyboard
+  operable with aria-label per row, progress bars have aria-valuenow, the
+  filter chips are keyboard-navigable, and the empty state is announced
+  with aria-live="polite" on filter changes.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Draft applications — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --teal: #0F8291;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1 { margin: 0; }
+
+  /* Shell */
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .search-wrap { flex: 1; max-width: 420px; position: relative; margin: 0 16px; }
+  .search-wrap input { width: 100%; height: 36px; border: 1px solid var(--border); border-radius: 3px; padding-left: 32px; padding-right: 10px; font-size: 13px; outline: none; font-family: inherit; background: #fff; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; position: relative; }
+  .icon-btn .count { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #C0392B; border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; text-decoration: none; color: var(--text); }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; background: #E6F4EA; color: #1E7E34; white-space: nowrap; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .page-head h1 { font-size: 20px; font-weight: 800; color: var(--navy); display: inline-flex; align-items: center; gap: 10px; }
+  .btn { height: 38px; padding: 0 18px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; text-decoration: none; color: var(--text); }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-primary:hover { background: #073F7A; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-destructive { background: #fff; color: #C0392B; border: 1px solid #C0392B; }
+  .btn.sm { height: 30px; padding: 0 12px; font-size: 12px; }
+
+  .filter-strip { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .chip { padding: 5px 12px; background: #fff; border: 1px solid var(--border); border-radius: 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; font-family: inherit; }
+  .chip.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 700; }
+  .chip:hover:not(.active) { background: var(--surface); color: var(--text); }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+  .dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dt thead tr { background: var(--surface); border-bottom: 1px solid var(--border-light); }
+  .dt th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; white-space: nowrap; }
+  .dt th.sortable { cursor: pointer; }
+  .dt th.sortable:hover { color: var(--text); }
+  .dt th .sort-caret { display: inline-block; margin-left: 4px; font-size: 9px; color: var(--sapphire); }
+  .dt tbody tr { border-bottom: 1px solid var(--border-light); cursor: pointer; }
+  .dt tbody tr:hover { background: var(--surface); }
+  .dt tbody tr:last-child { border-bottom: none; }
+  .dt td { padding: 12px 14px; vertical-align: middle; }
+  .td-client { font-weight: 600; color: var(--sapphire); text-decoration: none; }
+  .td-muted { font-size: 12px; color: var(--text-muted); }
+  .cell-cb { width: 30px; }
+
+  .progress-cell { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+  .progress-track { flex: 1; height: 5px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--sapphire); border-radius: 3px; }
+  .progress-pct { font-size: 11px; color: var(--text-muted); flex-shrink: 0; min-width: 32px; text-align: right; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.draft { background: #F4F6F9; color: #5C6B7A; border: 1px solid #5C6B7A22; }
+  .badge.draft .dot { background: #5C6B7A; }
+  .badge.shared { background: var(--info-bg); color: var(--sapphire); border: 1px solid #A8CBF5; }
+  .badge.shared .dot { background: var(--sapphire); }
+
+  .kebab { background: none; border: none; cursor: pointer; padding: 6px; color: var(--text-muted); font-size: 16px; border-radius: 3px; }
+  .kebab:hover { background: var(--surface); color: var(--text); }
+  .actions-cell { width: 40px; text-align: right; }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 40px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+    </a>
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A6472" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input placeholder="Search drafts…" aria-label="Search" />
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="S22_notifications.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="count">2</span></a>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html" aria-current="page">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+    <div class="page-head">
+      <h1>Applications <span class="annot">⚡ OOtB: Record List</span></h1>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-destructive sm" disabled title="Select at least one draft to enable">Bulk delete</button>
+        <a class="btn btn-primary" href="S06_lodge_application.html">+ New application</a>
+      </div>
+    </div>
+
+    <div class="filter-strip" role="tablist">
+      <button class="chip active" role="tab">My drafts (7)</button>
+      <button class="chip" role="tab">Shared with me (2)</button>
+      <button class="chip" role="tab">All firm drafts (12)</button>
+      <span style="flex:1;"></span>
+      <span class="annot">⚡ OOtB: Filter chips</span>
+    </div>
+
+    <div class="card">
+      <table class="dt" aria-describedby="drafts-count">
+        <thead>
+          <tr>
+            <th class="cell-cb"><input type="checkbox" aria-label="Select all drafts" /></th>
+            <th class="sortable">Client / reference<span class="sort-caret">▼</span></th>
+            <th class="sortable">Type</th>
+            <th class="sortable">Last edited</th>
+            <th class="sortable">Progress</th>
+            <th class="sortable">Last editor</th>
+            <th class="sortable">Status</th>
+            <th class="actions-cell"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cell-cb"><input type="checkbox" aria-label="Select draft — Beverley Davies" /></td>
+            <td><a class="td-client" href="S06_lodge_application.html">Beverley Davies</a><div class="td-muted">DR-2026-04-1123</div></td>
+            <td>Family Law</td>
+            <td class="td-muted">21 Apr 2026, 3:47 pm</td>
+            <td><div class="progress-cell"><div class="progress-track"><div class="progress-fill" style="width:60%;"></div></div><span class="progress-pct">60%</span></div></td>
+            <td class="td-muted">J. Halloran</td>
+            <td><span class="badge draft"><span class="dot"></span>Draft</span></td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="cell-cb"><input type="checkbox" aria-label="Select draft — Wei Chen" /></td>
+            <td><a class="td-client" href="S06_lodge_application.html">Wei Chen</a><div class="td-muted">DR-2026-04-1108</div></td>
+            <td>Criminal Law</td>
+            <td class="td-muted">18 Apr 2026, 11:02 am</td>
+            <td><div class="progress-cell"><div class="progress-track"><div class="progress-fill" style="width:30%;"></div></div><span class="progress-pct">30%</span></div></td>
+            <td class="td-muted">R. Nguyen (Support)</td>
+            <td><span class="badge shared"><span class="dot"></span>Shared</span></td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="cell-cb"><input type="checkbox" aria-label="Select draft — Thomas Pike" /></td>
+            <td><a class="td-client" href="S06_lodge_application.html">Thomas Pike</a><div class="td-muted">DR-2026-04-1089</div></td>
+            <td>Civil Law</td>
+            <td class="td-muted">12 Apr 2026, 5:14 pm</td>
+            <td><div class="progress-cell"><div class="progress-track"><div class="progress-fill" style="width:85%;"></div></div><span class="progress-pct">85%</span></div></td>
+            <td class="td-muted">J. Halloran</td>
+            <td><span class="badge draft"><span class="dot"></span>Draft</span></td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions">⋮</button></td>
+          </tr>
+          <tr>
+            <td class="cell-cb"><input type="checkbox" aria-label="Select draft — Helena Ortega" /></td>
+            <td><a class="td-client" href="S06_lodge_application.html">Helena Ortega</a><div class="td-muted">DR-2026-03-0984</div></td>
+            <td>Family Law</td>
+            <td class="td-muted">28 Mar 2026, 2:20 pm</td>
+            <td><div class="progress-cell"><div class="progress-track"><div class="progress-fill" style="width:15%;"></div></div><span class="progress-pct">15%</span></div></td>
+            <td class="td-muted">J. Halloran</td>
+            <td><span class="badge draft"><span class="dot"></span>Draft</span></td>
+            <td class="actions-cell"><button class="kebab" aria-label="Row actions">⋮</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size:12px;color:var(--text-muted);margin-top:12px;" id="drafts-count">Showing 4 of 7 drafts.</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

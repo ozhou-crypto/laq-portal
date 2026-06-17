@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<!--
+  S19 — Practice details (contact, ABN, banking) — v3
+  ======================================================
+  Design rationale (~200 words):
+
+  Layout: LWR Single-Column sectioned settings page. Three distinct
+  sections — Contact details, ABN & GST registration, Banking — each in a
+  card with its own Edit/Save controls so the user can update one area
+  without losing state in another. Each section has a read-only
+  change-history strip at the bottom exposing the audit trail per field.
+
+  Brand treatment: standard v3 shell. Inline edit: the section switches
+  from read view (labelled rows) to edit view (inputs) when the user clicks
+  Edit. Save and Cancel buttons sit at the bottom of the section card. The
+  Banking section is the most sensitive — the account number is masked by
+  default with a Reveal toggle, and any change triggers LAQ verification
+  that is surfaced as a "Pending LAQ verification" amber strip above the
+  card until approved.
+
+  Build approach: the entire page is OOtB Record Form + Related List
+  (change history). ABN validation is a small DataRaptor calling the
+  Australian Business Register API. Bank reveal is a custom LWC — it's the
+  one place standard components don't cover.
+
+  Accessibility: each section has its own h2 landmark, edit/save state is
+  announced via aria-live, bank reveal button has aria-pressed.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Practice details — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+    --warning: #8A4500; --warning-bg: #FEF3E2; --warning-border: #F5C06E;
+    --success: #1E7E34; --success-bg: #EBF5EB; --success-border: #A3D9A5;
+    --error: #C0392B;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1, h2 { margin: 0; }
+
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; position: relative; }
+  .icon-btn .count { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #C0392B; border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; text-decoration: none; color: var(--text); }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .annot.ootb { background: #E6F4EA; color: #1E7E34; }
+  .annot.custom { background: #EBF4FF; color: var(--sapphire); }
+  .annot.dataraptor { background: #F0FFF4; color: #065F46; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+  .page-head { margin-bottom: 22px; }
+  .page-head h1 { font-size: 22px; font-weight: 800; color: var(--navy); }
+  .page-head .sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Section nav (jump links) */
+  .jump {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;
+    padding: 10px 0; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+  }
+  .jump a { color: var(--sapphire); text-decoration: none; padding: 2px 8px; border-radius: 3px; }
+  .jump a:hover { background: var(--info-bg); }
+
+  /* Card */
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 18px; }
+  .card-head { padding: 12px 18px; border-bottom: 1px solid var(--border-light); background: #FAFBFC; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card-head h2 { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .card-body { padding: 18px; }
+
+  .pending {
+    background: var(--warning-bg); border: 1px solid var(--warning-border);
+    border-radius: 3px; padding: 9px 14px; margin: 0 0 12px;
+    font-size: 12px; color: var(--warning); display: flex; gap: 8px; align-items: center;
+  }
+
+  /* Read view rows */
+  .detail-row { display: grid; grid-template-columns: 200px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-light); font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-k { color: var(--text-muted); }
+  .detail-v { color: var(--text); font-weight: 500; }
+
+  .btn { height: 34px; padding: 0 14px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+
+  /* Change history */
+  .history {
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-light);
+    font-size: 12px; color: var(--text-muted);
+  }
+  .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; color: var(--text-muted); }
+  .history-row { display: grid; grid-template-columns: 120px 1fr 120px; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border-light); }
+  .history-row:last-child { border-bottom: none; }
+
+  /* Banking edit row */
+  .mask-row { display: flex; align-items: center; gap: 8px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 14px; }
+  .reveal-btn { background: none; border: 1px solid var(--border); border-radius: 3px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--text-muted); font-family: inherit; }
+  .reveal-btn[aria-pressed="true"] { background: var(--info-bg); color: var(--sapphire); border-color: var(--sapphire); }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 40px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+    </a>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="S22_notifications.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="count">2</span></a>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html" aria-current="page">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="page-head">
+      <h1>Practice details</h1>
+      <div class="sub">Firm contact, ABN and banking details used for LAQ grant payments.</div>
+    </div>
+
+    <div class="jump" aria-label="Jump to section">
+      <a href="#contact">Contact details</a>
+      <a href="#abn">ABN &amp; GST</a>
+      <a href="#banking">Banking</a>
+      <a href="#users">User &amp; licence management →</a>
+    </div>
+
+    <!-- Contact details -->
+    <section class="card" id="contact">
+      <div class="card-head">
+        <h2>Contact details</h2>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="annot ootb">⚡ OOtB: Record Form</span>
+          <button class="btn btn-secondary sm">Edit</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="detail-row"><span class="detail-k">Firm name</span><span class="detail-v">Halloran &amp; Associates</span></div>
+        <div class="detail-row"><span class="detail-k">Location / office</span><span class="detail-v">Brisbane CBD</span></div>
+        <div class="detail-row"><span class="detail-k">Street address</span><span class="detail-v">Level 8, 288 Queen Street, Brisbane QLD 4000</span></div>
+        <div class="detail-row"><span class="detail-k">Postal address</span><span class="detail-v">GPO Box 2048, Brisbane QLD 4001</span></div>
+        <div class="detail-row"><span class="detail-k">Phone</span><span class="detail-v">07 3222 4840</span></div>
+        <div class="detail-row"><span class="detail-k">General email</span><span class="detail-v">admin@halloran-associates.com.au</span></div>
+        <div class="detail-row"><span class="detail-k">Accounts email</span><span class="detail-v">accounts@halloran-associates.com.au</span></div>
+
+        <div class="history">
+          <div class="history-head"><span>Change history</span><a href="#" style="text-transform:none;letter-spacing:0;color:var(--sapphire);">View all →</a></div>
+          <div class="history-row"><span>18 Apr 2026</span><span>Postal address updated by J. Halloran</span><span>GPO Box 2048 ← 102 George St</span></div>
+          <div class="history-row"><span>02 Feb 2026</span><span>Accounts email updated by R. Nguyen</span><span>accounts@ ← finance@</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABN & GST -->
+    <section class="card" id="abn">
+      <div class="card-head">
+        <h2>ABN &amp; GST registration</h2>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="annot dataraptor">⚙ DataRaptor: ABR lookup</span>
+          <button class="btn btn-secondary sm">Edit</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="detail-row"><span class="detail-k">ABN</span><span class="detail-v">83 145 892 031 <span style="color:var(--success);font-size:11px;margin-left:8px;font-weight:700;">✓ Verified with the ABR</span></span></div>
+        <div class="detail-row"><span class="detail-k">Registered entity name</span><span class="detail-v">Halloran &amp; Associates Pty Ltd</span></div>
+        <div class="detail-row"><span class="detail-k">GST registered</span><span class="detail-v">Yes — from 01 Jul 2014</span></div>
+        <div class="detail-row"><span class="detail-k">Trading name</span><span class="detail-v">Halloran &amp; Associates</span></div>
+
+        <div class="history">
+          <div class="history-head"><span>Change history</span></div>
+          <div class="history-row"><span>14 Sep 2025</span><span>ABN re-verified (automatic)</span><span>Match confirmed</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Banking -->
+    <section class="card" id="banking">
+      <div class="pending">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <strong>Pending LAQ verification:</strong>&nbsp;Your BSB change submitted on 24 Apr 2026 is awaiting approval by LAQ's payments team. Typical turnaround is 1–2 business days.
+      </div>
+
+      <div class="card-head">
+        <h2>Banking</h2>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="annot custom">🔧 Custom LWC: Bank reveal</span>
+          <button class="btn btn-secondary sm">Edit</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="detail-row"><span class="detail-k">Account name</span><span class="detail-v">Halloran &amp; Associates Trust</span></div>
+        <div class="detail-row"><span class="detail-k">BSB</span><span class="detail-v"><span class="mask-row">●●● - ●●● <button class="reveal-btn" aria-pressed="false">Reveal</button></span></span></div>
+        <div class="detail-row"><span class="detail-k">Account number</span><span class="detail-v"><span class="mask-row">●●●● ●●56 <button class="reveal-btn" aria-pressed="false">Reveal</button></span></span></div>
+        <div class="detail-row"><span class="detail-k">Institution</span><span class="detail-v">Bank of Queensland</span></div>
+        <div class="detail-row"><span class="detail-k">Last verified</span><span class="detail-v">14 Sep 2025 · M. Foley (LAQ Payments)</span></div>
+
+        <div class="history">
+          <div class="history-head"><span>Change history</span><a href="#" style="text-transform:none;letter-spacing:0;color:var(--sapphire);">View all →</a></div>
+          <div class="history-row"><span>24 Apr 2026</span><span>BSB change submitted by J. Halloran</span><span>Pending LAQ verification</span></div>
+          <div class="history-row"><span>14 Sep 2025</span><span>Account details verified</span><span>LAQ Payments</span></div>
+          <div class="history-row"><span>10 Jul 2023</span><span>Banking details created</span><span>J. Halloran</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div style="background:var(--info-bg);border:1px solid var(--info-border);border-radius:4px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div>
+        <strong>Manage users and licences</strong><br>
+        <span style="font-size:12px;color:var(--text-muted);">Invite staff, assign roles, and manage your firm-location's 3-user licence cap.</span>
+      </div>
+      <a class="btn btn-primary" href="S20_user_management.html">Go to user management →</a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        var on = btn.getAttribute('aria-pressed') !== 'false';
+        var next = !on;
+        btn.setAttribute('aria-pressed', String(next));
+        btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+        document.body.classList.toggle('annot-off', !next);
+      });
+    }
+    document.querySelectorAll('.reveal-btn').forEach(function (r) {
+      r.addEventListener('click', function () {
+        var on = r.getAttribute('aria-pressed') === 'true';
+        var next = !on;
+        r.setAttribute('aria-pressed', String(next));
+        r.textContent = next ? 'Hide' : 'Reveal';
+        // Demo-only: swap mask/unmask values via sibling text
+        var row = r.parentElement;
+        if (row.textContent.trim().indexOf('●') === 0) {
+          row.firstChild.nodeValue = next ? '124 - 001' : '●●● - ●●● ';
+        }
+      });
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

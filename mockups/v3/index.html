@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<!--
+  LAQ Practitioner Portal — v3 clickable prototype gallery
+  ==========================================================
+  A gallery and jump-off page for the 23 v3 screens. Every screen is
+  cross-linked so stakeholders can walk the end-to-end Preferred Supplier
+  journey (S01 → S04 → S06 → S08 → S10 → S11 → S17 → S18 → S22).
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LAQ Practitioner Portal — v3 mockups</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --teal: #0F8291;
+    --text: #1A1A1A; --text-muted: #5A6472;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --surface: #F5F7FA;
+  }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif;
+    font-size: 14px; color: var(--text); background: #fff;
+    -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh;
+  }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; height: 64px; display: flex; align-items: center; gap: 12px; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1px; }
+  .nav-band { background: var(--navy); color: #fff; padding: 12px 24px; font-size: 13px; letter-spacing: 0.02em; }
+
+  main { flex: 1; max-width: 1200px; margin: 0 auto; padding: 32px 24px 48px; width: 100%; }
+
+  h1 { font-size: 26px; color: var(--navy); margin-bottom: 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--text-muted); margin-bottom: 24px; font-size: 14px; line-height: 1.55; max-width: 780px; }
+  .lede strong { color: var(--text); }
+  .lede a { color: var(--sapphire); }
+
+  .note {
+    background: var(--surface); border: 1px solid var(--border-light); border-radius: 4px;
+    padding: 14px 16px; margin-bottom: 24px; font-size: 13px; color: var(--text-muted); line-height: 1.6;
+  }
+  .note strong { color: var(--text); }
+
+  /* Prototype walkthrough strip */
+  .walk {
+    background: #F1F7FD; border: 1px solid #A8CBF5; border-radius: 4px;
+    padding: 16px 18px; margin-bottom: 28px;
+  }
+  .walk h2 { font-size: 15px; color: var(--navy); margin-bottom: 10px; }
+  .walk-steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+  .walk-steps a {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; background: #fff; border: 1px solid var(--border);
+    border-radius: 3px; text-decoration: none; color: var(--sapphire); font-weight: 600;
+  }
+  .walk-steps a:hover { background: var(--sapphire); color: #fff; border-color: var(--sapphire); }
+  .walk-steps .sep { color: var(--text-muted); margin: 0 2px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card {
+    border: 1px solid var(--border); border-radius: 4px; background: #fff;
+    padding: 16px 18px; text-decoration: none; color: inherit;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex; flex-direction: column; gap: 4px;
+    border-left: 3px solid var(--navy);
+  }
+  .card:hover { border-color: var(--sapphire); box-shadow: 0 4px 14px rgba(9,84,159,0.10); }
+  .card-id { font-size: 11px; font-weight: 700; color: var(--sapphire); letter-spacing: 0.06em; text-transform: uppercase; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--navy); margin-top: 2px; }
+  .card-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+  .card-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.02em; margin-top: 10px; align-self: flex-start; }
+  .tag-ootb { background: #E6F4EA; color: #1E7E34; }
+  .tag-flexcard { background: #F0E6FF; color: #6B21A8; }
+  .tag-omniscript { background: #FFF0F0; color: #9B1C1C; }
+  .tag-flow { background: #FEF3E2; color: #8A4500; }
+  .tag-dataraptor { background: #F0FFF4; color: #065F46; }
+  .tag-custom { background: #EBF4FF; color: #09549F; }
+
+  .group-head {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border-light);
+  }
+
+  .site-footer { background: var(--navy); padding: 18px 24px; color: rgba(255,255,255,0.85); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .site-footer a { color: rgba(255,255,255,0.7); margin-left: 20px; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="logo-tile">L</div>
+  <div>
+    <div class="brand-name">Legal Aid Queensland</div>
+    <div class="brand-sub">Practitioner Portal — v3 clickable prototype</div>
+  </div>
+</header>
+
+<div class="nav-band">v3 LAQ brand-aligned re-skin · White header · Navy nav · White pages · Navy footer · 22 screens · OOTB-first</div>
+
+<main>
+  <h1>LAQ Practitioner Portal — v3 prototype</h1>
+  <p class="lede">
+    22 linked mockup screens covering every workflow in the <strong>screen inventory</strong>.
+    Everything is wired: use the top navigation on any screen to jump between sections, or click
+    through the end-to-end walkthrough below. Status states, form conditional logic, and the
+    annotation toggle are all interactive — no code required.
+  </p>
+
+  <div class="walk">
+    <h2>End-to-end walkthrough — Preferred Supplier journey</h2>
+    <div class="walk-steps">
+      <a href="S01_signin_mfa.html">S01 Sign in</a>
+      <span class="sep">→</span>
+      <a href="S04_dashboard.html">S04 Dashboard</a>
+      <span class="sep">→</span>
+      <a href="S06_lodge_application.html">S06 Lodge application</a>
+      <span class="sep">→</span>
+      <a href="S08_application_submitted.html">S08 Confirmed</a>
+      <span class="sep">→</span>
+      <a href="S11_file_detail.html">S11 File detail</a>
+      <span class="sep">→</span>
+      <a href="S12_correspondence.html">S12 Correspond</a>
+      <span class="sep">→</span>
+      <a href="S13_documents.html">S13 Documents</a>
+      <span class="sep">→</span>
+      <a href="S14_outcomes.html">S14 Outcomes</a>
+      <span class="sep">→</span>
+      <a href="S17_submit_invoice.html">S17 Invoice</a>
+      <span class="sep">→</span>
+      <a href="S18_invoice_list.html">S18 Invoice list</a>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Brand notes.</strong> v3 matches legalaid.qld.gov.au: white site header with the logo tile in navy,
+    a separate navy nav band underneath, white page backgrounds, navy-underlined tabs, and a navy footer.
+    S01 and S02 use the Salesforce Identity / Experience Cloud login chrome (teal accent); S23 uses a
+    distinct darker admin chrome. Build-approach badges show whether a region is OOTB Experience Cloud,
+    an OmniStudio FlexCard, an OmniScript, a Salesforce Flow, a DataRaptor, or (rarely) a Custom LWC.
+    Toggle them on/off on any screen using the ⚡ button in the header.
+  </div>
+
+  <div class="group-head">Access &amp; Identity</div>
+  <div class="grid">
+    <a class="card" href="S01_signin_mfa.html">
+      <span class="card-id">S01</span>
+      <span class="card-title">Sign-in (external practitioners)</span>
+      <span class="card-desc">Centred 480px card: HTML Editor header + OOTB Login Form + HTML Editor footer. MFA, password reset, lockout and SSO are Salesforce-served on subsequent pages.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Login Form + HTML Editor</span>
+    </a>
+    <a class="card" href="S02_signin_sso.html">
+      <span class="card-id">S02</span>
+      <span class="card-title">Sign-in (SSO) — LAQ in-house</span>
+      <span class="card-desc">Single "Sign in with LAQ Identity" button rendered by the Auth Provider. Falls back to S01 for external users with username + password.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Auth Provider</span>
+    </a>
+    <a class="card" href="S03_collection_notice.html">
+      <span class="card-id">S03</span>
+      <span class="card-title">Collection notice &amp; privacy</span>
+      <span class="card-desc">Blocking modal on first login; standalone page thereafter. Plain-English summary + full notice, Print/Download PDF, version and date stamp.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: HTML Editor + Flow</span>
+    </a>
+  </div>
+
+  <div class="group-head">Home &amp; Navigation</div>
+  <div class="grid">
+    <a class="card" href="S04_dashboard.html">
+      <span class="card-id">S04</span>
+      <span class="card-title">Home dashboard</span>
+      <span class="card-desc">Every tile, attention item, quick action, notification and draft is clickable. KPIs deep-link into the matching list views.</span>
+      <span class="card-tag tag-flexcard">🃏 FlexCards + ⚡ OOtB</span>
+    </a>
+    <a class="card" href="S05_search_results.html">
+      <span class="card-id">S05</span>
+      <span class="card-title">Global search results</span>
+      <span class="card-desc">Predictive dropdown, filter rail, federated results (Files / Clients / Correspondence / Decisions), saved searches, zero-results treatment.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Global Search</span>
+    </a>
+  </div>
+
+  <div class="group-head">Applications</div>
+  <div class="grid">
+    <a class="card" href="S06_lodge_application.html">
+      <span class="card-id">S06</span>
+      <span class="card-title">Lodge new application</span>
+      <span class="card-desc">Five-step OmniScript (Client, Matter, Scope, Documents, Review) with autosave indicator. Save &amp; exit returns to drafts; Save &amp; continue ends on S08.</span>
+      <span class="card-tag tag-omniscript">📋 OmniStudio: OmniScript</span>
+    </a>
+    <a class="card" href="S07_draft_applications.html">
+      <span class="card-id">S07</span>
+      <span class="card-title">Draft applications list</span>
+      <span class="card-desc">Sortable table with progress column, bulk-delete guard, filter chips (My / Shared / Firm), continue on click.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Record List</span>
+    </a>
+    <a class="card" href="S08_application_submitted.html">
+      <span class="card-id">S08</span>
+      <span class="card-title">Application submitted</span>
+      <span class="card-desc">Copyable Q-number + three-step "What happens next" timeline. Return to home, start another, email a copy, print.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: OmniScript terminal step</span>
+    </a>
+    <a class="card" href="S09_extension_request.html">
+      <span class="card-id">S09</span>
+      <span class="card-title">Extension request</span>
+      <span class="card-desc">File context pinned at top, extension form, optional bundled invoice toggle that reveals a line-items panel, declaration gates submit.</span>
+      <span class="card-tag tag-omniscript">📋 OmniStudio: OmniScript</span>
+    </a>
+  </div>
+
+  <div class="group-head">Grant of Aid Files</div>
+  <div class="grid">
+    <a class="card" href="S10_my_files.html">
+      <span class="card-id">S10</span>
+      <span class="card-title">My files (list view)</span>
+      <span class="card-desc">Tabbed list (Active / Awaiting action / Archived / Closed). Click any row to open S11.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: List View</span>
+    </a>
+    <a class="card" href="S11_file_detail.html">
+      <span class="card-id">S11</span>
+      <span class="card-title">File detail — Summary</span>
+      <span class="card-desc">Highlights panel with 4px navy accent, scope FlexCard, record actions, six-tab strip, related-lists rail. Tabs link to S12–S14.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Record Detail + FlexCard</span>
+    </a>
+    <a class="card" href="S12_correspondence.html">
+      <span class="card-id">S12</span>
+      <span class="card-title">File detail — Correspondence</span>
+      <span class="card-desc">Two-pane thread view with message bubbles, inline attachments, recipient-scoped compose.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Messaging + Cases</span>
+    </a>
+    <a class="card" href="S13_documents.html">
+      <span class="card-id">S13</span>
+      <span class="card-title">File detail — Documents &amp; uploads</span>
+      <span class="card-desc">Multi-file drop zone, per-file upload progress, error state, category tagging, grid/list toggle.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: File Upload + Files</span>
+    </a>
+    <a class="card" href="S14_outcomes.html">
+      <span class="card-id">S14</span>
+      <span class="card-title">File detail — Outcomes</span>
+      <span class="card-desc">Record outcome form with LAQ taxonomy dropdown and conditional Court field. Chronological timeline shows editable vs. audit-locked entries.</span>
+      <span class="card-tag tag-flow">🔄 Salesforce Flow</span>
+    </a>
+    <a class="card" href="S15_decision_letters.html">
+      <span class="card-id">S15</span>
+      <span class="card-title">Decision letters viewer</span>
+      <span class="card-desc">Year-grouped list + embedded PDF reader + acknowledge/download/print. Restricted-access row demonstrated.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Files Preview</span>
+    </a>
+  </div>
+
+  <div class="group-head">Offers</div>
+  <div class="grid">
+    <a class="card" href="S16_decline_offer.html">
+      <span class="card-id">S16</span>
+      <span class="card-title">Decline an offer</span>
+      <span class="card-desc">Structured form: Conflict / Capacity / Other reason group with conditional sub-reason fields, offer context, submit reveals confirmation card.</span>
+      <span class="card-tag tag-flow">🔄 Salesforce Flow</span>
+    </a>
+  </div>
+
+  <div class="group-head">Invoicing</div>
+  <div class="grid">
+    <a class="card" href="S17_submit_invoice.html">
+      <span class="card-id">S17</span>
+      <span class="card-title">Submit invoice</span>
+      <span class="card-desc">Editable line items, live scope meter, over-scope warning banner + destructive CTA variant.</span>
+      <span class="card-tag tag-omniscript">📋 OmniStudio: OmniScript</span>
+    </a>
+    <a class="card" href="S18_invoice_list.html">
+      <span class="card-id">S18</span>
+      <span class="card-title">Invoice list &amp; cancel</span>
+      <span class="card-desc">All seven status states, row-level kebab actions, cancel modal with reason + audit. Disabled cancel on Paid / Reduced.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Record List</span>
+    </a>
+  </div>
+
+  <div class="group-head">Profile &amp; Administration</div>
+  <div class="grid">
+    <a class="card" href="S19_practice_details.html">
+      <span class="card-id">S19</span>
+      <span class="card-title">Practice details</span>
+      <span class="card-desc">Sectioned settings: Contact, ABN &amp; GST, Banking. Masked bank reveal, pending LAQ verification state, per-section change history.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Record Form</span>
+    </a>
+    <a class="card" href="S20_user_management.html">
+      <span class="card-id">S20</span>
+      <span class="card-title">User &amp; licence management</span>
+      <span class="card-desc">Licence meter per firm-location (under / at-cap / over-cap-requested), user list, delegated access awaiting approval.</span>
+      <span class="card-tag tag-omniscript">📋 OmniScript (licence request)</span>
+    </a>
+    <a class="card" href="S22_notifications.html">
+      <span class="card-id">S22</span>
+      <span class="card-title">Notifications centre</span>
+      <span class="card-desc">Two-pane inbox grouped Today / Earlier, full detail view with "View file" CTA.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Notification Bell + list view</span>
+    </a>
+    <a class="card" href="S23_admin_audit.html">
+      <span class="card-id">S23</span>
+      <span class="card-title">Admin audit log (LAQ admin)</span>
+      <span class="card-desc">Darker admin chrome. KPI strip, audit log with seven columns, filter set, export-with-reason modal, access overview panel for delegated relationships.</span>
+      <span class="card-tag tag-ootb">⚡ OOtB: Event Monitoring</span>
+    </a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <span>© 2026 Legal Aid Queensland. All rights reserved. — v3 clickable prototype</span>
+  <div>
+    <a href="../index.html">Back to full mockup gallery</a>
+  </div>
+</footer>
+
+</body>
+</html>

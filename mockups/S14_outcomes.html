@@ -1,0 +1,281 @@
+<!--
+  S14 — File detail — Outcomes tab
+  LWR Layout: Single-Column (within tab)
+  Component regions:
+  OOTB: Navigation Menu — standard header bar with logo, search, notifications, user menu
+  OOTB: Breadcrumbs — hierarchical location path above highlights panel
+  OOTB: Record Detail — highlights band showing file fields and tabs row
+  OOTB: Record Form (Record Edit Form on Outcome__c) — outcome type, date, court,
+        notes, and file upload fields rendered from the record type; standard layout
+  Custom: LWC:OutcomesTimeline — chronological vertical timeline view with edit/cancel
+          links within a 14-day window and an audit-lock indicator; standard Related List
+          renders a flat table, not a timeline with per-row locking logic; justified.
+  4 OOTB + 1 Custom = 20% custom.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outcomes — Q-2024-003847 — LAQ Practitioner Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #05325F;
+      --text:   #181818;
+      --muted:  #595959;
+      --bg:     #f3f3f3;
+      --white:  #ffffff;
+      --border: #e5e5e5;
+      --border2:#dddbda;
+      --avatar: #b0adab;
+      --radius: 0.25rem;
+    }
+
+    body {
+      font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+      font-size: 1rem; line-height: 1.5; color: #181818; background: #f3f3f3; min-height: 100vh;
+    }
+
+    /* ── Standard chrome ── */
+    .skip-link { position: absolute; top: -100px; left: 0; background: #05325F; color: #fff; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 700; z-index: 9999; text-decoration: none; border-radius: 0 0 0.25rem 0; }
+    .skip-link:focus { top: 0; }
+    .accent-strip { height: 33px; background: rgba(71, 195, 211, 0.2); }
+    .site-header { background: #fff; height: 97px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; border-bottom: 1px solid #e5e5e5; }
+    .site-logo { display: flex; align-items: center; text-decoration: none; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-search { display: flex; align-items: center; gap: 10px; background: #f3f3f3; border-radius: 24px; height: 48px; padding: 0 20px; width: 310px; }
+    .header-search input { background: none; border: none; outline: none; font-size: 1.125rem; font-family: inherit; color: #080707; width: 100%; }
+    .header-search input::placeholder { color: #767676; }
+    .header-search input:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+    .header-bell { background: none; border: none; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #3e3e3c; position: relative; }
+    .header-bell:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
+    .header-user { display: flex; align-items: center; gap: 6px; font-size: 1.125rem; color: #005288; background: none; border: none; cursor: pointer; font-family: inherit; }
+    .header-user:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
+    .primary-nav { background: #0f8291; height: 56px; display: flex; align-items: center; padding: 0 49px; gap: 60px; }
+    .primary-nav a { font-size: 1rem; font-weight: 400; color: #fff; text-decoration: none; height: 56px; display: flex; align-items: center; padding: 0 5px; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .primary-nav a.active { font-weight: 700; border-bottom-color: #fff; }
+    .primary-nav a:hover { opacity: 0.85; }
+    .primary-nav a:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+    .site-footer { background: #daf3f6; }
+    .footer-main { display: flex; justify-content: space-between; padding: 40px 77px 0; gap: 40px; }
+    .footer-col-primary { max-width: 528px; }
+    .footer-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
+    .footer-body { font-size: 1rem; color: #181818; line-height: 1.5625; }
+    .footer-col-visit { min-width: 160px; }
+    .footer-col-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
+    .footer-address { font-size: 1rem; color: #181818; line-height: 1.5625; }
+    .footer-more-link { display: inline-block; margin-top: 12px; font-size: 1rem; color: #181818; text-decoration: underline; }
+    .footer-social-icons { display: flex; gap: 12px; margin-top: 4px; }
+    .footer-social-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+    .footer-links { display: flex; gap: 88px; padding: 16px 77px 20px; }
+    .footer-links a { font-size: 1rem; color: #181818; text-decoration: underline; }
+
+    /* ── Page layout ── */
+    .page-container { display: flex; min-height: calc(100vh - 186px); }
+    .page-sidebar { width: 240px; flex-shrink: 0; background: #fff; border-right: 1px solid #e5e5e5; padding: 20px 0; min-height: calc(100vh - 186px); }
+    .page-sidebar a { display: block; padding: 8px 24px; font-size: 0.875rem; color: #181818; text-decoration: none; }
+    .page-sidebar a:hover { background: #f3f3f3; }
+    .page-sidebar a.active { background: #eef4fa; color: #005288; font-weight: 600; border-left: 3px solid #005288; }
+    .page-sidebar a:focus-visible { outline: 2px solid #005288; outline-offset: -2px; }
+
+    /* ── Main ── */
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb-bar { padding: 0.75rem 1.75rem 0; font-size: 0.875rem; color: var(--muted); display: flex; align-items: center; gap: 0.375rem; }
+    .breadcrumb-bar a { color: var(--navy); text-decoration: none; }
+    .breadcrumb-bar a:hover { text-decoration: underline; }
+    .bc-sep { color: var(--border2); }
+
+    /* ── Highlights band ── */
+    .highlights { background: var(--navy); padding: 1rem 1.75rem 0; }
+    .hl-row1 { display: flex; align-items: flex-start; gap: 0.875rem; margin-bottom: 0.875rem; }
+    .hl-avatar { width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--avatar); display: flex; align-items: center; justify-content: center; font-size: 0.9375rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .hl-title { flex: 1; }
+    .hl-name { font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1.2; }
+    .hl-sub { font-size: 0.8125rem; color: #a3bdd4; margin-top: 0.125rem; }
+    .hl-status { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.6875rem; font-weight: 700; padding: 0.25rem 0.625rem; border-radius: 0.75rem; white-space: nowrap; background: rgba(46,125,50,0.22); color: #81c784; border: 1px solid rgba(46,125,50,0.35); }
+    .hl-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #81c784; }
+    .hl-fields { display: flex; align-items: stretch; border-top: 1px solid rgba(255,255,255,0.15); margin-top: 0.625rem; }
+    .hl-field { padding: 0.625rem 1.25rem 0.625rem 0; display: flex; flex-direction: column; gap: 0.125rem; border-right: 1px solid rgba(255,255,255,0.12); margin-right: 1.25rem; }
+    .hl-field:last-child { border-right: none; margin-right: 0; }
+    .hl-field-label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #8da4b8; }
+    .hl-field-value { font-size: 0.875rem; font-weight: 600; color: #fff; }
+
+    /* ── Tabs row ── */
+    .tabs-row { background: var(--navy); padding: 0 1.75rem; display: flex; align-items: flex-end; gap: 0; }
+    .tab-btn { padding: 0.625rem 1.125rem; font-size: 0.8125rem; font-weight: 500; color: rgba(255,255,255,0.6); cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent; font-family: inherit; white-space: nowrap; }
+    .tab-btn:hover { color: rgba(255,255,255,0.9); }
+    .tab-btn.active { color: #fff; font-weight: 700; border-bottom-color: #fff; }
+    .tab-btn:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+
+    /* ── Content area ── */
+    .content { flex: 1; padding: 1.25rem 1.75rem; display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ── Card ── */
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 2px 2px 0 rgba(0,0,0,0.10); }
+    .card-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 0.8125rem; font-weight: 700; color: var(--text); }
+    .card-body { padding: 1.25rem 1.5rem; }
+
+    /* ── Outcomes timeline ── */
+    .timeline { position: relative; padding-left: 1.5rem; }
+    .timeline::before { content: ""; position: absolute; left: 0.4375rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; margin-bottom: 1.5rem; }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .tl-dot { position: absolute; left: -1.25rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--navy); border: 2px solid var(--white); box-shadow: 0 0 0 2px var(--navy); }
+    .tl-dot-muted { background: var(--muted); box-shadow: 0 0 0 2px var(--muted); }
+    .tl-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 0.375rem; }
+    .tl-title { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+    .tl-date { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+    .tl-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.375rem; }
+    .tl-notes { font-size: 0.8125rem; color: var(--text); margin-bottom: 0.5rem; line-height: 1.5; }
+    .tl-footer { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .outcome-badge { display: inline-block; font-size: 0.6875rem; font-weight: 600; padding: 0.0625rem 0.4375rem; border-radius: 0.25rem; background: #eef7ee; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .tl-actions { display: flex; align-items: center; gap: 0.375rem; }
+    .tl-action-link { font-size: 0.75rem; color: var(--navy); text-decoration: none; font-weight: 500; }
+    .tl-action-link:hover { text-decoration: underline; }
+    .tl-action-sep { color: var(--border2); font-size: 0.75rem; }
+    .tl-lock { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Record Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-label { font-size: 0.75rem; font-weight: 600; color: var(--text); }
+    .form-label .req { color: #b91c1c; margin-left: 0.1875rem; }
+    .form-input, .form-select, .form-textarea { height: 1.875rem; border: 1px solid var(--border2); border-radius: var(--radius); padding: 0 0.75rem; font-size: 0.8125rem; font-family: inherit; color: var(--text); background: var(--white); }
+    .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23706e6b' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.625rem center; padding-right: 2rem; }
+    .form-textarea { height: auto; padding: 0.5rem 0.75rem; resize: vertical; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
+    .form-hint { font-size: 0.75rem; color: var(--muted); }
+    .upload-zone-sm { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.5rem; background: var(--bg); }
+    .upload-zone-sm-text { font-size: 0.8125rem; color: var(--muted); }
+    .upload-zone-sm-link { color: var(--navy); text-decoration: underline; cursor: pointer; font-weight: 500; }
+    .btn-row { display: flex; align-items: center; gap: 0.5rem; padding-top: 0.5rem; }
+    .btn-primary { background: var(--navy); color: #fff; border: none; border-radius: var(--radius); height: 2rem; padding: 0 1rem; font-size: 0.8125rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-primary:hover { background: #09549f; }
+    .btn-primary:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+    .btn-neutral { background: var(--white); color: var(--text); border: 1px solid var(--border2); border-radius: var(--radius); height: 2rem; padding: 0 1rem; font-size: 0.8125rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-neutral:hover { background: var(--bg); }
+    .btn-neutral:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div class="accent-strip" aria-hidden="true"></div>
+<header class="site-header">
+  <a href="S04_dashboard.html" class="site-logo" aria-label="Legal Aid Queensland Practitioner Portal home">
+    <svg width="180" height="41" viewBox="0 0 180 40.6695" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g><path d="M65.6779 31.117V26.9237H55.0397V5.25391H50.0764V31.117H65.6779Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M82.6784 29.3522L80.9434 25.7881C79.2527 26.845 78.5456 27.199 77.4383 27.5136C76.7369 27.7267 76.0067 27.8312 75.273 27.8233C74.4581 27.84 73.6522 27.6469 72.9341 27.2628C72.2164 26.8786 71.6103 26.3165 71.1751 25.6308C70.74 24.8885 70.6215 24.2592 70.5421 22.7303H82.6784V20.7344C82.6784 15.8184 79.5296 12.3772 74.9962 12.3772C69.7564 12.3772 65.8162 16.7279 65.8162 22.4845C65.8162 28.0494 69.2422 31.6185 74.6798 31.6185C76.7608 31.624 78.8183 31.1812 80.711 30.3206C81.1412 30.1289 81.8134 29.829 82.6883 29.3374L82.6784 29.3522ZM77.9475 19.7906H70.7794C71.1751 17.3325 72.5889 15.9118 74.6798 15.9118C76.8846 15.9118 77.834 17.0081 77.9475 19.7906Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M101.919 16.423V12.8982L98.2109 13.1342H95.4923C94.2801 12.6377 92.9817 12.3837 91.6709 12.387C86.8261 12.387 83.8306 15.0514 83.8306 19.3972C83.8055 21.0326 84.3801 22.6211 85.4468 23.8659C85.9283 24.3989 86.471 24.8741 87.0634 25.2817C86.5693 25.67 86.1588 25.906 85.9215 26.1027C84.1469 27.2776 83.5188 28.0985 83.5188 29.1555C83.5188 30.2124 84.2654 30.9596 86.0799 31.6135C83.9491 33.4127 83.163 34.627 83.163 36.0379C83.163 38.7809 86.1983 40.6246 90.6919 40.6246C96.8316 40.6246 101.246 37.3308 101.246 32.7835C101.246 29.8339 99.5506 28.3984 95.9666 28.3984H89.5401C88.6355 28.3984 88.3192 28.2804 88.3192 27.9068C88.3192 27.4152 88.9124 26.8499 90.1333 25.9404C90.5734 26.0334 91.0234 26.073 91.473 26.0584C96.273 26.0584 99.5111 23.2759 99.5111 19.1219C99.5715 18.1505 99.2768 17.1901 98.6806 16.4181L101.919 16.423ZM94.7062 19.1661C94.7062 21.0441 93.3664 22.5386 91.6709 22.5386C89.9753 22.5386 88.6405 21.0637 88.6405 19.2055C88.6405 17.3473 89.9802 15.7643 91.6314 15.7643C93.2825 15.7643 94.7062 17.2932 94.7062 19.176V19.1661ZM96.8316 33.3488C96.8316 34.0567 96.3376 34.8777 95.4528 35.5463C94.2976 36.4532 92.8705 36.9499 91.399 36.9572C89.2287 36.9572 87.5331 36.0526 87.5331 34.917C87.5331 34.4254 87.8495 33.7421 88.4031 32.8376C88.5577 32.6446 88.6906 32.4352 88.7988 32.2132H94.5083C96.0854 32.2132 96.8316 32.6065 96.8316 33.3488Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M118.217 27.8232C116.957 27.7101 116.759 27.4299 116.759 25.788V18.1878C116.759 14.1911 114.782 12.387 110.411 12.387C105.468 12.387 102.611 14.2305 102.611 17.4406C102.596 17.8723 102.677 18.302 102.848 18.6991L107.342 17.7159C107.272 17.5609 107.231 17.3941 107.223 17.2243C107.223 16.3247 108.365 15.5775 109.784 15.5775C111.321 15.5775 112.028 16.482 112.028 18.4386V19.9674L106.827 21.4422C104.148 22.2288 103.046 23.0891 102.418 24.7753C102.214 25.3673 102.107 25.9881 102.101 26.6139C102.101 29.5143 104.306 31.5545 107.416 31.5545C109.27 31.5545 110.807 30.8859 112.542 29.3177C113.368 30.9252 114.119 31.3185 116.497 31.3185H117.486L118.237 27.7888L118.217 27.8232ZM112.028 26.5746C111.65 26.8888 111.241 27.1639 110.807 27.3955C110.219 27.7313 109.557 27.9186 108.879 27.9412C108.625 27.9646 108.369 27.9321 108.129 27.846C107.889 27.76 107.671 27.6225 107.49 27.4433C107.309 27.2641 107.171 27.0476 107.083 26.8091C106.996 26.5706 106.963 26.316 106.986 26.0633C106.995 25.5345 107.116 25.0136 107.342 24.5344L112.028 23.0055V26.5746Z" fill="#005288"/><path d="M123.902 31.1169V2.55005H119.211V31.1169H123.902Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M155.555 31.117L146.138 5.25879H141.689L132.271 31.117H137.477L139.602 24.7262H148.308L150.36 31.117H155.555ZM146.964 20.5377H140.932L143.928 11.1727L146.964 20.5377Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M161.329 6.35028C161.329 4.59034 160.148 3.17944 158.689 3.17944C157.231 3.17944 156.01 4.59034 156.01 6.35028C156.01 8.11021 157.231 9.52601 158.689 9.52601C160.148 9.52601 161.329 8.11512 161.329 6.35028ZM161.013 31.1171V12.8984H156.327V31.1171H161.013Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M179.768 31.1169V2.55005H175.082V13.6406C174.371 13.0776 173.53 12.7007 172.635 12.5443C172.11 12.4039 171.567 12.3377 171.023 12.3476C166.174 12.3476 162.273 16.895 162.273 22.5385C162.273 27.7839 165.467 31.6282 169.797 31.6282C171.016 31.6228 172.206 31.2696 173.228 30.6106C174.014 30.1349 174.655 29.455 175.082 28.6442V31.1022L179.768 31.1169ZM175.082 25.0457C173.935 26.8056 172.477 27.7839 171.023 27.7839C168.774 27.7839 167.242 25.4734 167.242 22.1846C167.242 18.7434 169.17 16.187 171.77 16.187C173.228 16.187 174.528 16.895 174.845 17.8733C175.014 18.6448 175.094 19.4334 175.082 20.2231V25.0457Z" fill="#005288"/><path d="M21.0039 1.18353C21.9185 -0.39451 23.4164 -0.39451 24.3309 1.18353L26.6049 5.11634C27.0571 6.0048 27.2927 6.98659 27.2927 7.98234C27.2927 8.97813 27.0571 9.95995 26.6049 10.8484L17.2123 27.0368C16.3027 28.6148 17.0492 29.9028 18.8783 29.9028H37.6634C38.662 29.9604 39.6338 30.2489 40.5004 30.7457C41.3673 31.2424 42.1056 31.9335 42.6562 32.7639L44.9305 36.6968C45.8449 38.2746 45.0983 39.5628 43.2695 39.5628H2.05563C0.226549 39.5628 -0.524859 38.2746 0.389681 36.6968L21.0039 1.18353Z" fill="#005288"/><path d="M37.9106 25.09C38.6719 26.4025 38.0491 27.4791 36.5265 27.4791H22.9121C21.3846 27.4791 20.7617 26.4025 21.523 25.09L28.3302 13.3653C29.0915 12.0527 30.3372 12.0527 31.1034 13.3653L37.9106 25.09Z" fill="#47C3D3"/></g></svg>
+  </a>
+  <div class="header-right">
+    <div class="header-search" role="search">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="#080707" stroke-width="1.5"/><path d="M13.5 13.5l3 3" stroke="#080707" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input type="search" placeholder="Search..." aria-label="Search portal" />
+    </div>
+    <button class="header-bell" aria-label="Notifications">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3a7 7 0 00-7 7v4L3 17h18l-2-3v-4a7 7 0 00-7-7z" stroke="#3e3e3c" stroke-width="1.5" fill="none"/><path d="M10 18a2 2 0 004 0" stroke="#3e3e3c" stroke-width="1.5" fill="none"/><circle cx="18" cy="6" r="4" fill="#005288"/></svg>
+    </button>
+    <button class="header-user" aria-label="User menu — Lucas" aria-haspopup="true">Lucas<svg width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="#005288" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</header>
+<nav class="primary-nav" aria-label="Primary navigation">
+  <a href="S04_dashboard.html">Home</a>
+  <a href="S07_draft_applications.html">Applications</a>
+  <a href="S10_my_files.html" class="active" aria-current="page">Grant of Aid</a>
+  <a href="S18_invoice_list.html">Invoices</a>
+    <a href="S26_referral_list.html">Referrals</a>
+</nav>
+
+<div class="page-container">
+  <nav class="page-sidebar" aria-label="File navigation">
+    <a href="S10_my_files.html">My Files</a>
+    <a href="#">Summary</a>
+    <a href="S12_correspondence.html">Correspondence</a>
+    <a href="S13_documents.html">Documents</a>
+    <a href="S14_outcomes.html" class="active" aria-current="page">Outcomes</a>
+    <a href="S15_decision_letters.html">Decision Letters</a>
+    <a href="#">Invoices</a>
+    <a href="#">Activity</a>
+  </nav>
+
+  <main class="main" id="main-content">
+    <nav class="breadcrumb-bar" aria-label="Breadcrumb" data-annotation='{"type":"OOTB","name":"Breadcrumbs","effort":"S","note":"Standard Breadcrumbs component"}'><a href="#">My Files</a><span class="bc-sep" aria-hidden="true">›</span><a href="#">Q-2024-003847 — Maria Tran</a><span class="bc-sep" aria-hidden="true">›</span><span aria-current="page">Outcomes</span></nav>
+
+    <div class="highlights" role="region" aria-label="File highlights" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"File context highlights from GrantFile__c"}'>
+      <div class="hl-row1"><div class="hl-avatar" aria-hidden="true">MT</div><div class="hl-title"><div class="hl-name">Maria Tran</div><div class="hl-sub">Q-2024-003847 · Family law — parenting</div></div><div class="hl-status" role="status" aria-label="File status: Active"><span class="hl-status-dot" aria-hidden="true"></span>Active</div></div>
+      <div class="hl-fields"><div class="hl-field"><span class="hl-field-label">Q-number</span><span class="hl-field-value">Q-2024-003847</span></div><div class="hl-field"><span class="hl-field-label">Matter type</span><span class="hl-field-value">Family — parenting</span></div><div class="hl-field"><span class="hl-field-label">Practitioner</span><span class="hl-field-value">Sarah Chen</span></div><div class="hl-field"><span class="hl-field-label">LAQ contact</span><span class="hl-field-value">Emma Watkins</span></div><div class="hl-field"><span class="hl-field-label">Scope expiry</span><span class="hl-field-value">30 Jun 2026</span></div></div>
+    </div>
+
+    <div class="tabs-row" role="tablist" aria-label="File detail tabs" data-annotation='{"type":"OOTB","name":"Tabs","effort":"S","note":"Standard Tabs component wrapping tab panels"}'>
+      <button class="tab-btn" role="tab" aria-selected="false">Summary</button>
+      <button class="tab-btn" role="tab" aria-selected="false">Correspondence</button>
+      <button class="tab-btn" role="tab" aria-selected="false">Documents</button>
+      <button class="tab-btn" role="tab" aria-selected="false">Invoices</button>
+      <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-panel">Outcomes</button>
+      <button class="tab-btn" role="tab" aria-selected="false">Activity</button>
+    </div>
+
+    <div class="content" role="tabpanel" id="tab-panel" aria-label="Outcomes">
+
+      <div class="card" data-annotation='{"type":"Custom","name":"LWC: OutcomesTimeline","effort":"M","note":"Visual timeline with edit/lock states per entry — no OOTB list view handles per-row edit windows"}'>
+        <div class="card-header"><h2 class="card-title">Outcome history</h2></div>
+        <div class="card-body">
+          <div class="timeline" role="list" aria-label="Outcome history">
+            <div class="timeline-item" role="listitem" aria-label="Application granted — partial, 12 Mar 2026">
+              <div class="tl-dot" aria-hidden="true"></div>
+              <div class="tl-header"><span class="tl-title">Application granted — partial</span><span class="tl-date">12 Mar 2026</span></div>
+              <div class="tl-meta">Court: Federal Circuit and Family Court of Australia</div>
+              <div class="tl-notes">Partial grant approved for parenting orders; property settlement matter excluded from scope.</div>
+              <div class="tl-footer">
+                <span class="outcome-badge"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true" style="display:inline;vertical-align:-1px;margin-right:2px"><path d="M2 5l2 2 4-4" stroke="#2e7d32" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Approved</span>
+                <div class="tl-actions" aria-label="Actions for this outcome"><a class="tl-action-link" href="#" aria-label="Edit: Application granted — partial">Edit</a><span class="tl-action-sep" aria-hidden="true">·</span><a class="tl-action-link" href="#" aria-label="Cancel: Application granted — partial">Cancel</a></div>
+              </div>
+            </div>
+            <div class="timeline-item" role="listitem" aria-label="Mediation session held, 08 Feb 2026 — editing locked">
+              <div class="tl-dot tl-dot-muted" aria-hidden="true"></div>
+              <div class="tl-header"><span class="tl-title">Mediation session held</span><span class="tl-date">08 Feb 2026</span></div>
+              <div class="tl-notes">NMAS mediation completed; parties did not reach agreement on parenting arrangements.</div>
+              <div class="tl-footer">
+                <div class="tl-lock"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1" stroke="#595959" stroke-width="1.2" fill="none"/><path d="M4 5V4a2 2 0 014 0v1" stroke="#595959" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>Editing locked — outside 14-day window</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" data-annotation='{"type":"OOTB","name":"Record Form","effort":"S","note":"Standard Record Form on Outcome__c — create new outcome record"}'>
+        <div class="card-header"><h2 class="card-title">Record outcome</h2></div>
+        <div class="card-body">
+          <form aria-label="Record a new outcome for Q-2024-003847" novalidate>
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" for="outcome-type">Outcome type<span class="req" aria-hidden="true">*</span></label><select class="form-select" id="outcome-type" name="outcome_type" required aria-required="true"><option value="">— Select outcome type —</option><optgroup label="Court outcomes"><option>Application granted — full</option><option>Application granted — partial</option><option>Application refused</option><option>Orders made by consent</option><option>Matter adjourned</option><option>Matter discontinued</option></optgroup><optgroup label="Mediation / FDR"><option>Mediation session held — agreement reached</option><option>Mediation session held — no agreement</option><option>Mediation not proceeded</option></optgroup><optgroup label="Grant administration"><option>Grant extended</option><option>Grant closed — matter finalised</option><option>Grant closed — client withdrew instructions</option><option>Scope variation approved</option></optgroup></select></div>
+              <div class="form-group"><label class="form-label" for="outcome-date">Date<span class="req" aria-hidden="true">*</span></label><input class="form-input" type="date" id="outcome-date" name="outcome_date" required aria-required="true"></div>
+              <div class="form-group full-width"><label class="form-label" for="outcome-court">Court or tribunal <span style="font-weight:400;color:var(--muted)">(if court-related)</span></label><input class="form-input" type="text" id="outcome-court" name="outcome_court" placeholder="e.g. Federal Circuit and Family Court of Australia"></div>
+              <div class="form-group full-width"><label class="form-label" for="outcome-notes">Notes</label><textarea class="form-textarea" id="outcome-notes" name="outcome_notes" rows="4" placeholder="Provide any relevant details about the outcome…"></textarea></div>
+              <div class="form-group full-width"><span class="form-label" id="support-doc-label">Supporting document</span><div class="upload-zone-sm" role="region" aria-labelledby="support-doc-label" data-annotation='{"type":"OOTB","name":"File Upload","effort":"S","note":"Standard File Upload component — attach supporting docs to outcome"}'><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 11V5M8 5L5.5 7.5M8 5l2.5 2.5" stroke="#595959" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke="#595959" stroke-width="1.3" stroke-linecap="round"/></svg><span class="upload-zone-sm-text">Drop a file here or <span class="upload-zone-sm-link" role="button" tabindex="0">choose file</span></span></div><span class="form-hint">PDF or DOCX. Maximum 25 MB.</span></div>
+            </div>
+            <div class="btn-row" data-annotation='{"type":"OOTB","name":"Record Form","effort":"S","note":"Record Form save/cancel actions"}'><button class="btn-primary" type="submit">Record outcome</button><button class="btn-neutral" type="button">Cancel</button></div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-main">
+    <div class="footer-col-primary"><p class="footer-heading">Welcome to the Legal Aid Queensland Practitioner Portal!</p><p class="footer-body">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p></div>
+    <div class="footer-col-visit"><p class="footer-col-heading">Visit us</p><p class="footer-address">Head office<br>44 Herschel Street<br>Brisbane Qld 4000</p><a href="#" class="footer-more-link">More contact details</a></div>
+    <div><p class="footer-col-heading">Stay connected</p><div class="footer-social-icons" aria-label="Social media links"><a href="#" class="footer-social-icon" aria-label="Facebook"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="3" stroke="#181818" stroke-width="1.5" fill="none"/><path d="M11 10h2l0.5-2.5H11V6c0-0.7 0.3-1 1-1h1.5V2.5A12 12 0 0011 2.5C9 2.5 8 3.5 8 5.5V7.5H6V10h2v7h3V10z" fill="#181818"/></svg></a><a href="#" class="footer-social-icon" aria-label="Instagram"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="17" height="17" rx="4" stroke="#181818" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="3.5" stroke="#181818" stroke-width="1.5" fill="none"/><circle cx="14.5" cy="5.5" r="1" fill="#181818"/></svg></a><a href="#" class="footer-social-icon" aria-label="LinkedIn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="3" stroke="#181818" stroke-width="1.5" fill="none"/><path d="M5 8h2v7H5V8zm1-3a1 1 0 110 2 1 1 0 010-2zm3 3h2v1c.4-.7 1.2-1.2 2-1.2 2 0 2.5 1.3 2.5 3V15h-2v-3.5c0-.9-.3-1.5-1-1.5s-1.5.6-1.5 1.5V15H9V8z" fill="#181818"/></svg></a><a href="#" class="footer-social-icon" aria-label="YouTube"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="4" width="18" height="12" rx="3" stroke="#181818" stroke-width="1.5" fill="none"/><polygon points="8,7.5 13.5,10 8,12.5" fill="#181818"/></svg></a><a href="#" class="footer-social-icon" aria-label="X (Twitter)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 3l5.5 7L3 17h2l4.3-5.3L14 17h4l-5.8-7.4L17.5 3h-2l-3.8 4.7L6 3H3z" fill="#181818"/></svg></a></div></div>
+  </div>
+  <div class="footer-links"><a href="#">Terms of Use</a><a href="#">Privacy Policy</a><a href="#">Accessibility</a></div>
+</footer>
+
+<script src="annotations.js"></script>
+</body>
+</html>

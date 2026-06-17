@@ -1,0 +1,587 @@
+<!--
+  S03 — Collection Notice and Privacy Statement
+  LWR Layout: Single-Column (modal state; underlying page uses standard authenticated shell)
+
+  Component regions:
+  OOTB: CMS Content — the full notice text (all five sections) is managed via Experience Cloud CMS so
+        LAQ legal officers can update copy without a code deployment
+  Custom: LWC:CollectionNoticeModal — blocking first-run modal with acknowledgement capture;
+          standard SLDS modal does not block page navigation, does not write to AuditLog__c, and
+          does not persist acknowledgement version to the user record
+
+  Simplifications considered: A Rich Content Editor component could render the notice text on a
+  standalone page (80% use case) — implement that for the standalone page variant. The blocking
+  modal and audit-log write are the only parts that require a custom LWC.
+
+  Primary state shown: First-run blocking modal over a dimmed, blurred portal background.
+  The modal footer is sticky so "I acknowledge" is always visible regardless of scroll position.
+  No dismiss (x) button — this modal is blocking by design.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S03 — Collection Notice — LAQ Practitioner Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #181818;
+      background: #f3f3f3;
+      min-height: 100vh;
+    }
+
+    /* ── Portal background (blurred/dimmed) ─────────────────────── */
+    .portal-bg {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      filter: blur(3px);
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Simulated new chrome: accent strip + white header + teal nav */
+    .bg-accent-strip {
+      height: 33px;
+      background: rgba(71, 195, 211, 0.2);
+    }
+
+    .bg-header {
+      background: #fff;
+      height: 97px;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      border-bottom: 1px solid #e5e5e5;
+      gap: 1rem;
+    }
+
+    .bg-header__logo {
+      width: 180px;
+      height: 41px;
+      background: rgba(5, 50, 95, 0.3);
+      border-radius: 0.25rem;
+    }
+
+    .bg-header__search {
+      width: 310px;
+      height: 48px;
+      background: #f3f3f3;
+      border-radius: 24px;
+      margin-left: auto;
+    }
+
+    .bg-nav {
+      background: #0f8291;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 49px;
+      gap: 60px;
+    }
+
+    .bg-nav span {
+      width: 5rem;
+      height: 0.75rem;
+      background: rgba(255,255,255,0.4);
+      border-radius: 0.125rem;
+    }
+
+    /* Simulated portal content */
+    .bg-content {
+      flex: 1;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .bg-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 0.25rem;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .bg-card__line {
+      height: 0.625rem;
+      background: #e5e5e5;
+      border-radius: 0.125rem;
+    }
+
+    .bg-card__line--short { width: 40%; }
+    .bg-card__line--medium { width: 65%; }
+    .bg-card__line--long { width: 90%; }
+
+    /* ── Modal overlay ───────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+    }
+
+    /* The dialog */
+    .modal {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+      border-radius: 0.25rem;
+      width: 100%;
+      max-width: 640px;
+      max-height: calc(100vh - 3rem);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Modal header */
+    .modal__header {
+      padding: 1.25rem 1.5rem 1rem;
+      border-bottom: 1px solid #e5e5e5;
+      flex-shrink: 0;
+    }
+
+    .modal__title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #181818;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal__meta {
+      font-size: 0.875rem;
+      color: #595959;
+    }
+
+    .modal__meta strong {
+      font-weight: 600;
+    }
+
+    /* Modal body — scrollable */
+    .modal__body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Scroll gradient hint */
+    .modal__body:after {
+      content: '';
+      display: block;
+      height: 1px;
+    }
+
+    /* Plain English summary */
+    .notice-summary {
+      background: #f3f8ff;
+      border: 1px solid #d1e3f8;
+      border-radius: 0.25rem;
+      padding: 0.875rem 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .notice-summary__label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #05325F;
+      margin-bottom: 0.375rem;
+    }
+
+    .notice-summary__text {
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      color: #181818;
+    }
+
+    /* Full notice */
+    .notice-divider {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #595959;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .notice-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e5e5;
+    }
+
+    .notice-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .notice-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .notice-section__heading {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #181818;
+      margin-bottom: 0.375rem;
+    }
+
+    .notice-section__body {
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      color: #3e3e3c;
+    }
+
+    .notice-section__body + .notice-section__body {
+      margin-top: 0.375rem;
+    }
+
+    /* Modal footer — sticky */
+    .modal__footer {
+      border-top: 1px solid #e5e5e5;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      height: 2.25rem;
+      padding: 0 1.25rem;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      font-family: inherit;
+      color: #fff;
+      background: #05325F;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      white-space: nowrap;
+      outline: none;
+    }
+
+    .btn-primary:hover { background: #09549F; }
+
+    .btn-primary:focus-visible {
+      outline: 2px solid #05325F;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px rgba(5,50,95,0.25);
+    }
+
+    .btn-neutral {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      height: 2.25rem;
+      padding: 0 1.25rem;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      font-family: inherit;
+      color: #181818;
+      background: #fff;
+      border: 1px solid #dddbda;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      white-space: nowrap;
+      outline: none;
+    }
+
+    .btn-neutral:hover { background: #f3f3f3; }
+
+    .btn-neutral:focus-visible {
+      outline: 2px solid #05325F;
+      outline-offset: 2px;
+    }
+
+    .btn-neutral svg,
+    .btn-primary svg {
+      flex-shrink: 0;
+    }
+
+    /* Below-modal note */
+    .modal-footnote {
+      margin-top: 0.875rem;
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.8);
+      text-align: center;
+    }
+
+    /* Scroll indicator at bottom of modal body */
+    .scroll-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      color: #595959;
+      padding: 0.75rem 0 0;
+    }
+
+    .scroll-indicator svg {
+      flex-shrink: 0;
+    }
+
+    /* ── Focus trap visual for demo ──────────────────────────────── */
+    .modal *:focus-visible {
+      outline: 2px solid #05325F;
+      outline-offset: 2px;
+    }
+    /* A11Y note: Production component must trap focus within .modal-overlay */
+    /* ── Skip link (WCAG 2.4.1) ── */
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 0;
+      background: #05325F;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      z-index: 9999;
+      text-decoration: none;
+      border-radius: 0 0 0.25rem 0;
+    }
+    .skip-link:focus {
+      top: 0;
+    }
+  </style>
+</head>
+<body>
+  <a href="#notice-title" class="skip-link">Skip to main content</a>
+
+<!-- ── Blurred portal background ──────────────────────────────── -->
+<div class="portal-bg" aria-hidden="true" data-annotation='{"type":"OOTB","name":"Experience Cloud Login","effort":"S","note":"Portal chrome visible beneath modal overlay"}'>
+  <div class="bg-accent-strip"></div>
+  <div class="bg-header">
+    <div class="bg-header__logo"></div>
+    <div class="bg-header__search"></div>
+  </div>
+  <div class="bg-nav">
+    <span></span><span></span><span></span><span></span>
+  </div>
+  <div class="bg-content">
+    <div class="bg-card">
+      <div class="bg-card__line bg-card__line--short"></div>
+      <div class="bg-card__line bg-card__line--long"></div>
+      <div class="bg-card__line bg-card__line--medium"></div>
+      <div class="bg-card__line bg-card__line--long"></div>
+    </div>
+    <div style="display:flex;gap:1rem;">
+      <div class="bg-card" style="flex:1;">
+        <div class="bg-card__line bg-card__line--short"></div>
+        <div class="bg-card__line bg-card__line--medium"></div>
+        <div class="bg-card__line bg-card__line--long"></div>
+      </div>
+      <div class="bg-card" style="flex:1;">
+        <div class="bg-card__line bg-card__line--short"></div>
+        <div class="bg-card__line bg-card__line--medium"></div>
+        <div class="bg-card__line bg-card__line--long"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Blocking modal overlay ──────────────────────────────────── -->
+<!-- A11Y: Production LWC MUST implement keyboard focus trap — Tab/Shift+Tab must cycle within modal only. Initial focus should land on the modal body (scrollable region). -->
+<div
+  class="modal-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="notice-title"
+  aria-describedby="notice-summary-text"
+  data-annotation='{"type":"Custom","name":"LWC: CollectionNoticeModal","effort":"M","note":"Blocking first-run modal — intercepts navigation until acknowledged"}'
+>
+
+  <div class="modal" data-annotation='{"type":"Custom","name":"LWC: CollectionNoticeModal","effort":"M","note":"Modal with sticky header, scrollable body, sticky footer"}'>
+
+    <!-- Modal header -->
+    <header class="modal__header">
+      <h1 class="modal__title" id="notice-title">Collection notice and privacy statement</h1>
+      <p class="modal__meta">
+        <strong>Version 2.1</strong> &mdash; Updated 01 Mar 2026
+      </p>
+    </header>
+
+    <!-- Modal body (scrollable) -->
+    <div class="modal__body" tabindex="0" aria-label="Notice content — scroll to read">
+
+      <!-- Plain English summary -->
+      <div class="notice-summary" role="region" aria-label="Plain English summary" data-annotation='{"type":"OOTB","name":"CMS Content","effort":"S","note":"Plain-language summary authored in Experience Cloud CMS"}'>
+        <div class="notice-summary__label">Summary in plain English</div>
+        <p class="notice-summary__text" id="notice-summary-text">
+          Legal Aid Queensland (LAQ) collects personal and practice information about you through
+          this portal to administer grants of legal aid on behalf of your clients. We will use
+          this information to process applications, manage payments, and communicate with you about
+          matters you handle. We will not disclose your information to third parties except as
+          required by law or with your consent. You have the right to access and correct
+          information we hold about you by contacting LAQ.
+        </p>
+      </div>
+
+      <!-- Full notice -->
+      <div class="notice-divider">Full collection notice</div>
+
+      <section class="notice-section" aria-labelledby="section-purpose" data-annotation='{"type":"OOTB","name":"CMS Content","effort":"S","note":"Full collection notice text managed in CMS — version-stamped"}'>
+        <h2 class="notice-section__heading" id="section-purpose">1. Purpose of collection</h2>
+        <p class="notice-section__body">
+          Legal Aid Queensland ABN 49 846 898 098 collects personal information through this
+          portal for the purpose of administering the grant of legal aid scheme under the
+          <em>Legal Aid Queensland Act 1997</em> (Qld). This includes assessing applications,
+          managing grants, processing disbursements, and maintaining the integrity of the scheme.
+        </p>
+        <p class="notice-section__body">
+          Information is also collected to verify your identity, confirm your practising
+          credentials, manage your portal access and licence allocations, and to comply with
+          obligations under the <em>Information Privacy Act 2009</em> (Qld).
+        </p>
+      </section>
+
+      <section class="notice-section" aria-labelledby="section-what">
+        <h2 class="notice-section__heading" id="section-what">2. What we collect</h2>
+        <p class="notice-section__body">
+          We may collect your full name, preferred contact details, law practice details, ABN,
+          banking details for payment purposes, Queensland Law Society or Bar Association
+          membership number, and matter-specific information you provide when lodging applications
+          or submitting correspondence through the portal.
+        </p>
+        <p class="notice-section__body">
+          We also collect technical information such as login timestamps, IP addresses, session
+          identifiers, and audit log records of actions taken within the portal. This information
+          is used solely for security monitoring and compliance purposes.
+        </p>
+      </section>
+
+      <section class="notice-section" aria-labelledby="section-use">
+        <h2 class="notice-section__heading" id="section-use">3. How we use it</h2>
+        <p class="notice-section__body">
+          Your information is used to process and determine applications for legal aid, to
+          communicate with you about matters you manage, to make payments for approved work, and
+          to generate reporting required by LAQ's funding agreements and legislation.
+        </p>
+        <p class="notice-section__body">
+          We may use de-identified aggregated data for statistical and policy purposes. We will
+          not use your information for direct marketing.
+        </p>
+      </section>
+
+      <section class="notice-section" aria-labelledby="section-disclosure">
+        <h2 class="notice-section__heading" id="section-disclosure">4. Disclosure</h2>
+        <p class="notice-section__body">
+          LAQ may disclose your personal information to the Queensland Law Society, the Bar
+          Association of Queensland, the Queensland Civil and Administrative Tribunal, or courts
+          where disclosure is required by law or is necessary to administer a grant of aid.
+          We may also disclose information to approved service providers who assist us in
+          operating this portal, under confidentiality agreements.
+        </p>
+        <p class="notice-section__body">
+          LAQ does not disclose personal information outside Australia except where you have
+          expressly consented or where disclosure is required by an applicable law.
+        </p>
+      </section>
+
+      <section class="notice-section" aria-labelledby="section-rights">
+        <h2 class="notice-section__heading" id="section-rights">5. Your rights</h2>
+        <p class="notice-section__body">
+          You have the right to access personal information we hold about you and to request
+          corrections if the information is inaccurate, out of date, or incomplete. To make an
+          access or correction request, contact the LAQ Privacy Officer at
+          <a href="mailto:privacy@legalaid.qld.gov.au" style="color:#05325F;">privacy@legalaid.qld.gov.au</a>
+          or by post to GPO Box 2449, Brisbane QLD 4001.
+        </p>
+        <p class="notice-section__body">
+          You may also lodge a privacy complaint with the Office of the Information Commissioner
+          Queensland. Details are available at
+          <a href="#" style="color:#05325F;">www.oic.qld.gov.au</a>.
+        </p>
+      </section>
+
+      <!-- Scroll indicator -->
+      <div class="scroll-indicator" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="#595959" stroke-width="1.25"/>
+          <path d="M7 4.5v3l2 1.5" stroke="#595959" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Scroll up to review the full notice before acknowledging.
+      </div>
+
+    </div><!-- /.modal__body -->
+
+    <!-- Modal footer — sticky -->
+    <footer class="modal__footer" data-annotation='{"type":"Custom","name":"LWC: CollectionNoticeModal","effort":"M","note":"Acknowledgement capture writes to ContactConsent__c"}'>
+      <button class="btn-primary" type="button">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <polyline points="1.5,6 4.5,9 10.5,3" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        I acknowledge
+      </button>
+      <button class="btn-neutral" type="button">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M2 10h8M6 2v6M3.5 5l2.5 3 2.5-3" stroke="#595959" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Print / download PDF
+      </button>
+    </footer>
+
+  </div><!-- /.modal -->
+
+  <!-- Below-modal note -->
+  <p class="modal-footnote">
+    You must acknowledge this notice before accessing the portal.
+  </p>
+
+</div><!-- /.modal-overlay -->
+
+<script>
+(function () {
+  var ackBtn = document.querySelector('.btn-primary');
+  var overlay = document.querySelector('.modal-overlay');
+  var bg = document.querySelector('.portal-bg');
+
+  ackBtn.addEventListener('click', function () {
+    // Fade out modal
+    overlay.style.transition = 'opacity 0.3s ease';
+    overlay.style.opacity = '0';
+
+    // Un-blur background
+    bg.style.transition = 'filter 0.3s ease, opacity 0.3s ease';
+    bg.style.filter = 'none';
+    bg.style.opacity = '1';
+
+    // Navigate to dashboard after transition
+    setTimeout(function () {
+      window.location.href = 'S04_dashboard.html';
+    }, 350);
+  });
+}());
+</script>
+<script src="annotations.js"></script>
+</body>
+</html>

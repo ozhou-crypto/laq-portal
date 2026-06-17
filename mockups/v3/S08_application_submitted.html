@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<!--
+  S08 — Application submitted confirmation — v3 (LAQ brand-aligned)
+  ====================================================================
+  Design rationale (~200 words):
+
+  Layout: LWR Single-Column with a centred narrow card (620px max).
+
+  Brand treatment: white shell (header + nav), white confirmation card with a
+  thin green top-accent bar that mirrors the login card's navy accent pattern.
+  The success icon is a restrained circular SVG tick on a pale green surface —
+  no celebratory illustrations, no confetti, no marketing language, consistent
+  with CLAUDE.md rules.
+
+  Content:
+  - Success title and one-line confirmation statement
+  - Quoted reference number in monospaced large type with a Copy button — the
+    practitioner needs to save this for their own records and it is the primary
+    shareable artefact from this screen
+  - "What happens next" is a three-step timeline (received → assessment →
+    decision) with realistic LAQ turnaround times (2–5 business days)
+  - Four actions: Email me a copy, Print receipt, Start another application,
+    Return to home — primary action is Return to home (most common next step)
+
+  Annotation: the OmniScript's terminal step is OOtB — no custom LWC needed.
+
+  Accessibility: the success status is announced via role="status", keyboard
+  reachable, and does not use colour alone (green surface is paired with a
+  tick icon and the literal text "Application submitted").
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Application submitted — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --success: #1E7E34; --success-bg: #EBF5EB; --success-border: #A3D9A5;
+  }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Public Sans','Source Sans 3',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 14px; color: var(--text); background: var(--page);
+    -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh;
+  }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button { font-family: inherit; }
+  h1 { margin: 0; }
+
+  /* Shell */
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1px; }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; cursor: pointer; font-family: inherit; text-decoration: none; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 620px; margin: 48px auto; padding: 0 24px; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; text-align: center; }
+  .card-accent { background: var(--success); height: 4px; }
+  .card-body { padding: 32px 28px; }
+
+  .success-icon {
+    width: 56px; height: 56px;
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+  }
+  h1 { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .lede { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
+
+  .ref-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+    padding: 16px 20px; margin-bottom: 28px;
+    display: inline-flex; align-items: center; gap: 16px;
+  }
+  .ref-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; text-align: left; }
+  .ref-value { font-size: 22px; font-weight: 800; color: var(--navy); font-family: 'SFMono-Regular', Consolas, monospace; letter-spacing: 0.04em; }
+  .copy-btn {
+    background: #fff; border: 1px solid var(--border); border-radius: 3px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer;
+  }
+
+  .timeline-wrap { text-align: left; margin-bottom: 24px; }
+  .timeline-head { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; }
+  .tl-row { display: flex; gap: 14px; margin-bottom: 20px; }
+  .tl-row:last-child { margin-bottom: 0; }
+  .tl-rail { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .tl-dot {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .tl-line { width: 2px; height: 28px; background: var(--border-light); margin-top: 2px; }
+  .tl-body { padding-top: 3px; }
+  .tl-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .tl-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .btn { height: 38px; padding: 0 18px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .annot.ootb { background: #E6F4EA; color: #1E7E34; }
+
+  /* Annotation toggle */
+  .annot-toggle {
+    background: var(--info-bg, #EBF4FF); border: 1px solid var(--sapphire); border-radius: 3px;
+    color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer;
+    letter-spacing: 0.03em; font-family: inherit;
+  }
+  .annot-toggle[aria-pressed="false"] {
+    background: transparent; border-color: var(--border); color: var(--text-muted);
+  }
+  body.annot-off .annot { display: none !important; }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 24px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="logo-tile">L</div>
+      <div>
+        <div class="brand-name">Legal Aid Queensland</div>
+        <div class="brand-sub">Practitioner Portal</div>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <span class="annot ootb">⚡ OOtB: OmniScript terminal step</span>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html" aria-current="page">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+    <div class="card" role="status" aria-live="polite">
+      <div class="card-accent"></div>
+      <div class="card-body">
+        <div class="success-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E7E34" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h1>Application submitted</h1>
+        <p class="lede">Your application for a grant of legal aid has been submitted to Legal Aid Queensland.</p>
+
+        <div class="ref-box">
+          <div style="text-align:left;">
+            <div class="ref-label">Your reference number</div>
+            <div class="ref-value">Q-2026-004812</div>
+          </div>
+          <button class="copy-btn" aria-label="Copy reference number">⎘ Copy</button>
+        </div>
+
+        <div class="timeline-wrap">
+          <div class="timeline-head">What happens next</div>
+          <div class="tl-row">
+            <div class="tl-rail"><div class="tl-dot">1</div><div class="tl-line"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Application received</div>
+              <div class="tl-text">LAQ has received your application. You will receive a confirmation via your preferred notification channel.</div>
+            </div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-rail"><div class="tl-dot">2</div><div class="tl-line"></div></div>
+            <div class="tl-body">
+              <div class="tl-title">Assessment</div>
+              <div class="tl-text">A grants officer will assess the application — typically 2–5 business days.</div>
+            </div>
+          </div>
+          <div class="tl-row">
+            <div class="tl-rail"><div class="tl-dot">3</div></div>
+            <div class="tl-body">
+              <div class="tl-title">Decision</div>
+              <div class="tl-text">You will be notified of the decision. If further information is needed, LAQ will contact you first.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-secondary">Email me a copy</button>
+          <button class="btn btn-secondary">Print receipt</button>
+          <a class="btn btn-secondary" href="S06_lodge_application.html">Start another application</a>
+          <a class="btn btn-primary" href="S04_dashboard.html">Return to home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="#">Collection notice & privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+</body>
+</html>

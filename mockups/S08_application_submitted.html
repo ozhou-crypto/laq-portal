@@ -1,0 +1,411 @@
+<!--
+  S08 — Application submitted confirmation
+  LWR Layout: Single-Column (centred confirmation block, authenticated top bar only,
+  no left nav — post-submission focused state)
+
+  Component regions:
+  OOTB: Navigation Menu — top bar only (no left nav on this screen per brief)
+  Custom: LWC:SubmissionConfirmation — reads Q-number from the submitted record,
+    renders a copyable reference field, displays a "what happens next" numbered
+    list, and provides action buttons; a standard Flow screen success step could
+    approximate this but lacks copy-to-clipboard and the three-step summary.
+
+  Simplifications considered (50% custom — flagged): Replace with a standard Flow
+  screen "success" step, which natively supports a heading, body text, and action
+  buttons. Loses copy-to-clipboard and the next-steps list but eliminates the
+  custom LWC entirely. Recommend this simpler approach unless copy-to-clipboard is
+  confirmed as a day-one accessibility requirement (it is genuinely useful for
+  practitioners who need to quote the reference in correspondence).
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application submitted — LAQ Practitioner Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:        #05325F;
+      --sapphire:    #09549F;
+      --text:        #181818;
+      --muted:       #595959;
+      --bg-page:     #f3f3f3;
+      --border:      #dddbda;
+      --border-card: #e5e5e5;
+      --success:     #2e844a;
+      --radius:      0.25rem;
+    }
+
+    body {
+      font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #181818;
+      background: #f3f3f3;
+      min-height: 100vh;
+    }
+
+    a { color: var(--navy); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; border-radius: 2px; }
+
+    /* ── Standard chrome ── */
+    .skip-link {
+      position: absolute; top: -100px; left: 0;
+      background: #05325F; color: #fff;
+      padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 700;
+      z-index: 9999; text-decoration: none; border-radius: 0 0 0.25rem 0;
+    }
+    .skip-link:focus { top: 0; }
+    .accent-strip { height: 33px; background: rgba(71, 195, 211, 0.2); }
+    .site-header {
+      background: #fff; height: 97px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; border-bottom: 1px solid #e5e5e5;
+    }
+    .site-logo { display: flex; align-items: center; text-decoration: none; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-search {
+      display: flex; align-items: center; gap: 10px;
+      background: #f3f3f3; border-radius: 24px; height: 48px; padding: 0 20px; width: 310px;
+    }
+    .header-search input {
+      background: none; border: none; outline: none;
+      font-size: 1.125rem; font-family: inherit; color: #080707; width: 100%;
+    }
+    .header-search input::placeholder { color: #767676; }
+    .header-search input:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+    .header-bell {
+      background: none; border: none; cursor: pointer;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      color: #3e3e3c; position: relative;
+    }
+    .header-bell:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
+    .header-user {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 1.125rem; color: #005288;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+    }
+    .header-user:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
+    .primary-nav {
+      background: #0f8291; height: 56px;
+      display: flex; align-items: center; padding: 0 49px; gap: 60px;
+    }
+    .primary-nav a {
+      font-size: 1rem; font-weight: 400; color: #fff; text-decoration: none;
+      height: 56px; display: flex; align-items: center; padding: 0 5px;
+      border-bottom: 2px solid transparent; white-space: nowrap;
+    }
+    .primary-nav a.active { font-weight: 700; border-bottom-color: #fff; }
+    .primary-nav a:hover { opacity: 0.85; }
+    .primary-nav a:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+    .site-footer { background: #daf3f6; }
+    .footer-main { display: flex; justify-content: space-between; padding: 40px 77px 0; gap: 40px; }
+    .footer-col-primary { max-width: 528px; }
+    .footer-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
+    .footer-body { font-size: 1rem; color: #181818; line-height: 1.5625; }
+    .footer-col-visit { min-width: 160px; }
+    .footer-col-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
+    .footer-address { font-size: 1rem; color: #181818; line-height: 1.5625; }
+    .footer-more-link { display: inline-block; margin-top: 12px; font-size: 1rem; color: #181818; text-decoration: underline; }
+    .footer-social-icons { display: flex; gap: 12px; margin-top: 4px; }
+    .footer-social-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+    .footer-links { display: flex; gap: 88px; padding: 16px 77px 20px; }
+    .footer-links a { font-size: 1rem; color: #181818; text-decoration: underline; }
+
+    /* ── Page layout ────────────────────────────────────────────── */
+    .page-wrap {
+      min-height: calc(100vh - 186px);
+      display: flex; align-items: flex-start;
+      justify-content: center;
+      padding: 3rem 1rem 4rem;
+    }
+
+    /* ── Confirmation card ──────────────────────────────────────── */
+    .confirm-card {
+      width: 100%; max-width: 600px;
+      background: #fff;
+      border: 1px solid var(--border-card);
+      box-shadow: 0 2px 2px 0 rgba(0,0,0,0.10);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+
+    /* ── Tick icon area ─────────────────────────────────────────── */
+    .tick-area {
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .tick-icon {
+      width: 3rem; height: 3rem;
+      margin-bottom: 1rem;
+    }
+    .confirm-heading {
+      font-size: 1.25rem; font-weight: 700;
+      color: var(--text); margin-bottom: 0.375rem;
+    }
+    .confirm-sub {
+      font-size: 0.875rem; color: var(--muted);
+    }
+
+    /* ── Divider ────────────────────────────────────────────────── */
+    .card-divider {
+      border: none; border-top: 1px solid var(--border-card);
+      margin: 1.5rem 0;
+    }
+
+    /* ── Reference block ────────────────────────────────────────── */
+    .ref-block {
+      background: #f3f3f3;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .ref-label {
+      font-size: 0.75rem; font-weight: 700;
+      color: var(--muted); margin-bottom: 0.25rem;
+      text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .ref-number {
+      font-size: 1.125rem; font-weight: 700;
+      color: var(--navy);
+      font-family: "Courier New", "Consolas", monospace;
+      letter-spacing: 0.02em;
+    }
+    .btn-copy {
+      display: inline-flex; align-items: center; gap: 0.375rem;
+      height: 1.875rem; padding: 0 0.75rem;
+      font-size: 0.75rem; font-weight: 600;
+      border-radius: var(--radius);
+      background: #fff; border: 1px solid var(--border);
+      color: var(--text); cursor: pointer;
+      font-family: inherit; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-copy:hover { background: #f3f3f3; }
+    .btn-copy:focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+    .btn-copy svg { width: 14px; height: 14px; fill: var(--muted); }
+
+    /* ── Next steps ─────────────────────────────────────────────── */
+    .next-heading {
+      font-size: 0.9375rem; font-weight: 700;
+      color: var(--text); margin-bottom: 0.75rem;
+    }
+    .next-list {
+      list-style: none; padding: 0;
+      display: flex; flex-direction: column; gap: 0.625rem;
+      margin-bottom: 1rem;
+    }
+    .next-list li {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      font-size: 0.8125rem; color: var(--text);
+    }
+    .next-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #f3f3f3; border: 1px solid var(--border-card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6875rem; font-weight: 700; color: var(--navy);
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    .notification-note {
+      font-size: 0.75rem; color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+    .notification-note a { color: var(--navy); font-size: 0.75rem; }
+
+    /* ── Action buttons ─────────────────────────────────────────── */
+    .action-row {
+      display: flex; gap: 0.75rem;
+      flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 2rem; padding: 0 1rem;
+      font-size: 0.8125rem; font-weight: 700;
+      border-radius: var(--radius); border: none;
+      cursor: pointer; white-space: nowrap; font-family: inherit;
+    }
+    .btn:focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+    .btn-primary { background: var(--navy); color: #fff; }
+    .btn-primary:hover { background: #042a52; }
+    .btn-neutral { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-neutral:hover { background: #f3f3f3; }
+
+    .text-links {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+    }
+    .text-link {
+      font-size: 0.8125rem; color: var(--navy);
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; padding: 0;
+    }
+    .text-link:hover { text-decoration: underline; }
+    .text-link:focus-visible {
+      outline: 2px solid var(--sapphire); outline-offset: 2px; border-radius: 2px;
+    }
+
+    /* ── Responsive: stack buttons on small screens ─────────────── */
+    @media (max-width: 480px) {
+      .action-row { flex-direction: column; }
+      .action-row .btn { width: 100%; }
+      .text-links { flex-direction: column; gap: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div class="accent-strip" aria-hidden="true"></div>
+  <header class="site-header">
+    <a href="S04_dashboard.html" class="site-logo" aria-label="Legal Aid Queensland Practitioner Portal home">
+      <svg width="180" height="41" viewBox="0 0 180 40.6695" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g><path d="M65.6779 31.117V26.9237H55.0397V5.25391H50.0764V31.117H65.6779Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M82.6784 29.3522L80.9434 25.7881C79.2527 26.845 78.5456 27.199 77.4383 27.5136C76.7369 27.7267 76.0067 27.8312 75.273 27.8233C74.4581 27.84 73.6522 27.6469 72.9341 27.2628C72.2164 26.8786 71.6103 26.3165 71.1751 25.6308C70.74 24.8885 70.6215 24.2592 70.5421 22.7303H82.6784V20.7344C82.6784 15.8184 79.5296 12.3772 74.9962 12.3772C69.7564 12.3772 65.8162 16.7279 65.8162 22.4845C65.8162 28.0494 69.2422 31.6185 74.6798 31.6185C76.7608 31.624 78.8183 31.1812 80.711 30.3206C81.1412 30.1289 81.8134 29.829 82.6883 29.3374L82.6784 29.3522ZM77.9475 19.7906H70.7794C71.1751 17.3325 72.5889 15.9118 74.6798 15.9118C76.8846 15.9118 77.834 17.0081 77.9475 19.7906Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M101.919 16.423V12.8982L98.2109 13.1342H95.4923C94.2801 12.6377 92.9817 12.3837 91.6709 12.387C86.8261 12.387 83.8306 15.0514 83.8306 19.3972C83.8055 21.0326 84.3801 22.6211 85.4468 23.8659C85.9283 24.3989 86.471 24.8741 87.0634 25.2817C86.5693 25.67 86.1588 25.906 85.9215 26.1027C84.1469 27.2776 83.5188 28.0985 83.5188 29.1555C83.5188 30.2124 84.2654 30.9596 86.0799 31.6135C83.9491 33.4127 83.163 34.627 83.163 36.0379C83.163 38.7809 86.1983 40.6246 90.6919 40.6246C96.8316 40.6246 101.246 37.3308 101.246 32.7835C101.246 29.8339 99.5506 28.3984 95.9666 28.3984H89.5401C88.6355 28.3984 88.3192 28.2804 88.3192 27.9068C88.3192 27.4152 88.9124 26.8499 90.1333 25.9404C90.5734 26.0334 91.0234 26.073 91.473 26.0584C96.273 26.0584 99.5111 23.2759 99.5111 19.1219C99.5715 18.1505 99.2768 17.1901 98.6806 16.4181L101.919 16.423ZM94.7062 19.1661C94.7062 21.0441 93.3664 22.5386 91.6709 22.5386C89.9753 22.5386 88.6405 21.0637 88.6405 19.2055C88.6405 17.3473 89.9802 15.7643 91.6314 15.7643C93.2825 15.7643 94.7062 17.2932 94.7062 19.176V19.1661ZM96.8316 33.3488C96.8316 34.0567 96.3376 34.8777 95.4528 35.5463C94.2976 36.4532 92.8705 36.9499 91.399 36.9572C89.2287 36.9572 87.5331 36.0526 87.5331 34.917C87.5331 34.4254 87.8495 33.7421 88.4031 32.8376C88.5577 32.6446 88.6906 32.4352 88.7988 32.2132H94.5083C96.0854 32.2132 96.8316 32.6065 96.8316 33.3488Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M118.217 27.8232C116.957 27.7101 116.759 27.4299 116.759 25.788V18.1878C116.759 14.1911 114.782 12.387 110.411 12.387C105.468 12.387 102.611 14.2305 102.611 17.4406C102.596 17.8723 102.677 18.302 102.848 18.6991L107.342 17.7159C107.272 17.5609 107.231 17.3941 107.223 17.2243C107.223 16.3247 108.365 15.5775 109.784 15.5775C111.321 15.5775 112.028 16.482 112.028 18.4386V19.9674L106.827 21.4422C104.148 22.2288 103.046 23.0891 102.418 24.7753C102.214 25.3673 102.107 25.9881 102.101 26.6139C102.101 29.5143 104.306 31.5545 107.416 31.5545C109.27 31.5545 110.807 30.8859 112.542 29.3177C113.368 30.9252 114.119 31.3185 116.497 31.3185H117.486L118.237 27.7888L118.217 27.8232ZM112.028 26.5746C111.65 26.8888 111.241 27.1639 110.807 27.3955C110.219 27.7313 109.557 27.9186 108.879 27.9412C108.625 27.9646 108.369 27.9321 108.129 27.846C107.889 27.76 107.671 27.6225 107.49 27.4433C107.309 27.2641 107.171 27.0476 107.083 26.8091C106.996 26.5706 106.963 26.316 106.986 26.0633C106.995 25.5345 107.116 25.0136 107.342 24.5344L112.028 23.0055V26.5746Z" fill="#005288"/><path d="M123.902 31.1169V2.55005H119.211V31.1169H123.902Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M155.555 31.117L146.138 5.25879H141.689L132.271 31.117H137.477L139.602 24.7262H148.308L150.36 31.117H155.555ZM146.964 20.5377H140.932L143.928 11.1727L146.964 20.5377Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M161.329 6.35028C161.329 4.59034 160.148 3.17944 158.689 3.17944C157.231 3.17944 156.01 4.59034 156.01 6.35028C156.01 8.11021 157.231 9.52601 158.689 9.52601C160.148 9.52601 161.329 8.11512 161.329 6.35028ZM161.013 31.1171V12.8984H156.327V31.1171H161.013Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M179.768 31.1169V2.55005H175.082V13.6406C174.371 13.0776 173.53 12.7007 172.635 12.5443C172.11 12.4039 171.567 12.3377 171.023 12.3476C166.174 12.3476 162.273 16.895 162.273 22.5385C162.273 27.7839 165.467 31.6282 169.797 31.6282C171.016 31.6228 172.206 31.2696 173.228 30.6106C174.014 30.1349 174.655 29.455 175.082 28.6442V31.1022L179.768 31.1169ZM175.082 25.0457C173.935 26.8056 172.477 27.7839 171.023 27.7839C168.774 27.7839 167.242 25.4734 167.242 22.1846C167.242 18.7434 169.17 16.187 171.77 16.187C173.228 16.187 174.528 16.895 174.845 17.8733C175.014 18.6448 175.094 19.4334 175.082 20.2231V25.0457Z" fill="#005288"/><path d="M21.0039 1.18353C21.9185 -0.39451 23.4164 -0.39451 24.3309 1.18353L26.6049 5.11634C27.0571 6.0048 27.2927 6.98659 27.2927 7.98234C27.2927 8.97813 27.0571 9.95995 26.6049 10.8484L17.2123 27.0368C16.3027 28.6148 17.0492 29.9028 18.8783 29.9028H37.6634C38.662 29.9604 39.6338 30.2489 40.5004 30.7457C41.3673 31.2424 42.1056 31.9335 42.6562 32.7639L44.9305 36.6968C45.8449 38.2746 45.0983 39.5628 43.2695 39.5628H2.05563C0.226549 39.5628 -0.524859 38.2746 0.389681 36.6968L21.0039 1.18353Z" fill="#005288"/><path d="M37.9106 25.09C38.6719 26.4025 38.0491 27.4791 36.5265 27.4791H22.9121C21.3846 27.4791 20.7617 26.4025 21.523 25.09L28.3302 13.3653C29.0915 12.0527 30.3372 12.0527 31.1034 13.3653L37.9106 25.09Z" fill="#47C3D3"/><path d="M109.364 40.6196C109.23 40.6574 109.092 40.6736 108.953 40.6687C108.838 40.6691 108.723 40.6543 108.612 40.6245C108.506 40.5943 108.402 40.5584 108.301 40.5161C108.211 40.4787 108.123 40.4361 108.039 40.3885C107.959 40.3394 107.895 40.3001 107.836 40.2707C107.687 40.177 107.51 40.0788 107.292 39.9704C107.07 39.8606 106.838 39.7703 106.6 39.7004C106.208 39.7125 105.816 39.6491 105.448 39.5135C105.129 39.3847 104.848 39.1767 104.633 38.9089C104.158 38.3149 103.911 37.5727 103.935 36.8146C103.921 36.258 104.044 35.7064 104.291 35.207C104.506 34.7708 104.851 34.4118 105.28 34.1796C105.469 34.0838 105.67 34.0144 105.878 33.9731C106.096 33.9276 106.318 33.9045 106.541 33.9043C106.913 33.8975 107.283 33.9644 107.628 34.1009C107.944 34.2286 108.227 34.4233 108.459 34.6712C108.691 34.9347 108.868 35.2424 108.978 35.5757C109.102 35.96 109.162 36.3619 109.156 36.7654C109.171 37.3136 109.061 37.8579 108.835 38.3583C108.642 38.7616 108.339 39.1023 107.959 39.3413C108.055 39.3764 108.148 39.4191 108.236 39.4693L108.498 39.6166C108.614 39.6778 108.735 39.7306 108.859 39.7741C108.985 39.8232 109.119 39.8481 109.255 39.8477C109.377 39.8477 109.499 39.8394 109.62 39.8232H109.793L109.472 40.5754L109.364 40.6196ZM107.732 36.0575C107.712 35.8703 107.673 35.6857 107.613 35.5069C107.585 35.4257 107.547 35.3482 107.5 35.2759C107.442 35.1897 107.372 35.1119 107.292 35.0448C107.196 34.9713 107.089 34.9117 106.976 34.8678C106.838 34.8162 106.692 34.7912 106.546 34.7941C106.35 34.7913 106.156 34.837 105.982 34.9268C105.822 35.0108 105.689 35.1366 105.597 35.2906C105.367 35.7684 105.262 36.2957 105.29 36.8244C105.29 37.8077 105.473 38.4025 105.834 38.6385C106.05 38.7771 106.304 38.8455 106.56 38.8349C106.746 38.8485 106.932 38.8096 107.097 38.7224C107.261 38.6355 107.397 38.5041 107.49 38.3436C107.712 37.8568 107.809 37.323 107.772 36.79C107.772 36.5453 107.759 36.3007 107.732 36.0575Z" fill="#47C3D3"/><path d="M117.298 38.3241C117.293 38.3803 117.283 38.4362 117.268 38.491L117.214 38.6583C117.163 38.7859 117.093 38.9056 117.006 39.0121C116.897 39.1488 116.765 39.2655 116.616 39.3561C116.425 39.4728 116.219 39.5604 116.002 39.6167C115.724 39.69 115.436 39.7251 115.147 39.7202C114.738 39.7311 114.331 39.6662 113.946 39.5283C113.643 39.4226 113.382 39.2247 113.199 38.963C113.147 38.8981 113.102 38.8271 113.066 38.7515C113.031 38.6794 113.004 38.6035 112.987 38.5253C112.967 38.4347 112.954 38.3429 112.947 38.25C112.947 38.1469 112.947 38.0291 112.947 37.9011V33.9683H114.218V37.675C114.217 37.8146 114.225 37.9543 114.243 38.0929C114.255 38.1817 114.282 38.2682 114.322 38.3486C114.409 38.4834 114.533 38.591 114.679 38.6598C114.825 38.7285 114.987 38.7553 115.147 38.7368C115.372 38.7478 115.594 38.6858 115.78 38.5597C115.86 38.5034 115.927 38.4302 115.976 38.3452C116.024 38.2602 116.054 38.1658 116.062 38.0684C116.065 38.0389 116.065 38.0091 116.062 37.9796C116.064 37.9502 116.064 37.9207 116.062 37.8913V33.9585H117.303V38.0831C117.308 38.1632 117.306 38.244 117.298 38.3241Z" fill="#47C3D3"/><path d="M121.371 33.9783H124.831L124.673 34.9074H122.592V36.2003H124.317V37.1294H122.592V38.6388H124.891V39.6218H121.371V33.9783Z" fill="#47C3D3"/><path d="M128.589 33.9783H132.049L131.891 34.9074H129.81V36.2003H131.535V37.1294H129.81V38.6388H132.108V39.6218H128.584L128.589 33.9783Z" fill="#47C3D3"/><path d="M137.724 37.4539C137.635 37.2769 137.546 37.1 137.462 36.9181L137.22 36.397L137.017 35.9496C136.968 35.812 136.923 35.7038 136.894 35.6153C136.894 35.7284 136.918 35.8513 136.923 35.9889C136.928 36.1266 136.923 36.2593 136.923 36.4019C136.923 36.5445 136.923 36.6821 136.923 36.8197C136.923 36.9574 136.923 37.0852 136.923 37.2032L136.958 39.6119H135.811V33.9783H137.145L138.312 36.2298C138.461 36.5395 138.594 36.8296 138.708 37.1049C138.822 37.3802 138.911 37.626 138.975 37.8276C138.975 37.7194 138.95 37.5965 138.94 37.4588C138.93 37.3212 138.94 37.1835 138.911 37.036C138.881 36.8886 138.911 36.7558 138.886 36.6231C138.861 36.4904 138.886 36.3773 138.886 36.279L138.861 33.9783H140.043V39.6119H138.757L137.724 37.4539Z" fill="#47C3D3"/><path d="M148.125 38.6141C148.005 38.8463 147.836 39.051 147.631 39.2138C147.393 39.3894 147.125 39.5208 146.84 39.602C146.504 39.6941 146.156 39.7387 145.807 39.7349C145.448 39.7338 145.091 39.6892 144.744 39.602C144.401 39.517 144.069 39.3916 143.755 39.2285L144.21 38.3486C144.471 38.4808 144.742 38.5922 145.021 38.6828C145.3 38.7644 145.59 38.8044 145.881 38.8006C146.593 38.8006 146.949 38.545 146.949 38.0291C146.949 37.6799 146.682 37.4341 146.153 37.3014L145.476 37.1293C145.217 37.0678 144.967 36.9719 144.734 36.8442C144.549 36.7399 144.392 36.5911 144.279 36.4116C144.132 36.1791 144.047 35.9135 144.03 35.6394C144.014 35.3653 144.067 35.0915 144.185 34.8434C144.29 34.6275 144.442 34.4377 144.63 34.2879C144.835 34.1287 145.068 34.0087 145.317 33.9339C145.604 33.846 145.902 33.8029 146.202 33.8061C146.572 33.8051 146.939 33.8547 147.295 33.9536C147.628 34.042 147.944 34.1813 148.234 34.3665L147.656 35.1678C147.418 35.0309 147.166 34.9204 146.904 34.8385C146.687 34.7715 146.46 34.7383 146.232 34.7401C146.013 34.7315 145.797 34.7955 145.619 34.922C145.545 34.9754 145.484 35.0456 145.443 35.1269C145.402 35.2081 145.381 35.298 145.381 35.389C145.378 35.453 145.388 35.5171 145.412 35.5766C145.436 35.6361 145.473 35.6896 145.52 35.7332C145.679 35.8503 145.864 35.9279 146.059 35.9593L146.796 36.1461C147.233 36.2321 147.635 36.4481 147.947 36.7655C148.211 37.0578 148.351 37.44 148.338 37.8324C148.33 38.1058 148.257 38.3739 148.125 38.6141Z" fill="#47C3D3"/><path d="M152.05 39.6119V33.9783H153.316V38.6829H155.496L155.273 39.6119H152.05Z" fill="#47C3D3"/><path d="M162.066 38.2746H160.281L159.851 39.6118H158.576L160.553 33.9585H161.873L163.791 39.6118H162.476L162.066 38.2746ZM161.73 37.2424C161.73 37.1736 161.68 37.0851 161.651 36.9769C161.621 36.8688 161.581 36.7459 161.542 36.6131C161.502 36.4804 161.468 36.3427 161.433 36.2051C161.398 36.0674 161.394 36.0576 161.364 35.9495L161.285 35.6152C161.268 35.5187 161.245 35.4235 161.215 35.3301L161.191 35.2072L161.156 35.3252C161.156 35.394 161.117 35.4824 161.082 35.5955C161.048 35.7086 161.027 35.8217 160.993 35.9495C160.958 36.0773 160.929 36.1953 160.899 36.2936C160.845 36.5001 160.79 36.682 160.746 36.8294C160.701 36.9769 160.642 37.1539 160.578 37.3211H161.769L161.73 37.2424Z" fill="#47C3D3"/><path d="M169.184 37.4539C169.095 37.2769 169.006 37.1 168.922 36.9181L168.68 36.397L168.478 35.9496C168.428 35.812 168.388 35.7038 168.354 35.6153C168.354 35.7284 168.379 35.8513 168.383 35.9889C168.388 36.1266 168.383 36.2593 168.383 36.4019C168.383 36.5445 168.383 36.6821 168.383 36.8197C168.383 36.9574 168.383 37.0852 168.383 37.2032L168.418 39.6119H167.237V33.9783H168.591L169.758 36.2298C169.906 36.5395 170.04 36.8296 170.153 37.1049C170.267 37.3802 170.356 37.626 170.42 37.8276C170.42 37.7194 170.395 37.5965 170.385 37.4588C170.376 37.3212 170.385 37.1835 170.356 37.036C170.326 36.8886 170.356 36.7558 170.331 36.6231C170.306 36.4904 170.331 36.3773 170.331 36.279L170.302 33.9783H171.483V39.6119H170.198L169.184 37.4539Z" fill="#47C3D3"/><path d="M179.398 38.7713C179.215 38.999 178.99 39.1894 178.735 39.3317C178.487 39.4745 178.21 39.5602 177.924 39.5825L177.539 39.607H175.561V33.9783H177.351C177.549 33.9783 177.716 33.9783 177.845 33.9783C178.091 33.9981 178.333 34.0544 178.562 34.1454C178.787 34.2381 178.994 34.3715 179.17 34.5387C179.447 34.8003 179.66 35.1215 179.793 35.4777C179.939 35.8979 180.008 36.3409 179.996 36.7853C180.033 37.4962 179.822 38.1981 179.398 38.7713ZM178.592 36.0233C178.558 35.781 178.474 35.5482 178.345 35.34C178.252 35.1921 178.122 35.0703 177.969 34.9861C177.782 34.9002 177.577 34.8597 177.371 34.8681H176.807V38.6879H177.47C177.643 38.7015 177.817 38.669 177.975 38.5938C178.132 38.5187 178.266 38.4035 178.364 38.26C178.585 37.8503 178.684 37.3867 178.651 36.923C178.653 36.6221 178.633 36.3214 178.592 36.0233Z" fill="#47C3D3"/></g></svg>
+    </a>
+    <div class="header-right">
+      <div class="header-search" role="search">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="9" cy="9" r="6" stroke="#080707" stroke-width="1.5"/>
+          <path d="M13.5 13.5l3 3" stroke="#080707" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="search" placeholder="Search..." aria-label="Search portal" />
+      </div>
+      <button class="header-bell" aria-label="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3a7 7 0 00-7 7v4L3 17h18l-2-3v-4a7 7 0 00-7-7z" stroke="#3e3e3c" stroke-width="1.5" fill="none"/>
+          <path d="M10 18a2 2 0 004 0" stroke="#3e3e3c" stroke-width="1.5" fill="none"/>
+          <circle cx="18" cy="6" r="4" fill="#005288"/>
+        </svg>
+      </button>
+      <button class="header-user" aria-label="User menu — Lucas" aria-haspopup="true">
+        Lucas
+        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+          <path d="M1 1l5 5 5-5" stroke="#005288" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+  <nav class="primary-nav" aria-label="Primary navigation">
+    <a href="S04_dashboard.html">Home</a>
+    <a href="S07_draft_applications.html" class="active" aria-current="page">Applications</a>
+    <a href="S10_my_files.html">Grant of Aid</a>
+    <a href="S18_invoice_list.html">Invoices</a>
+    <a href="S26_referral_list.html">Referrals</a>
+  </nav>
+
+  <!-- Centred confirmation block -->
+  <main class="page-wrap" id="main-content">
+
+    <div class="confirm-card" role="region" aria-label="Application submitted confirmation" data-annotation='{"type":"OOTB","name":"Flow","effort":"S","note":"Flow success screen — confirmation, reference number display, next-steps text"}'>
+
+      <!-- Tick icon and heading -->
+      <div class="tick-area">
+        <!-- Restrained tick-circle icon — no celebratory illustration -->
+        <svg class="tick-icon" viewBox="0 0 48 48" fill="none"
+          aria-hidden="true" focusable="false">
+          <circle cx="24" cy="24" r="22" fill="#05325F"/>
+          <polyline points="14,24 21,31 34,17"
+            stroke="#ffffff" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1 class="confirm-heading">Application submitted</h1>
+        <p class="confirm-sub">Your application has been received by Legal Aid Queensland.</p>
+      </div>
+
+      <hr class="card-divider">
+
+      <!-- Reference number block -->
+      <div class="ref-block" data-annotation='{"type":"OOTB","name":"Flow","effort":"S","note":"Flow screen component — text display with clipboard copy action"}'>
+        <div>
+          <div class="ref-label">Your reference number</div>
+          <div class="ref-number" aria-label="Reference number Q-2024-012847">Q-2024-012847</div>
+        </div>
+        <button class="btn-copy" type="button"
+          aria-label="Copy reference number Q-2024-012847 to clipboard"
+          onclick="navigator.clipboard && navigator.clipboard.writeText('Q-2024-012847'); this.textContent='Copied'">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M11 1H5a1 1 0 00-1 1v1H3a1 1 0 00-1 1v10a1 1 0 001 1h8a1
+              1 0 001-1v-1h1a1 1 0 001-1V4l-3-3zm-1 12H3V5h1v7a1 1 0 001 1h5v1zm2-2H5V2h5v3h3v7z"/>
+          </svg>
+          Copy
+        </button>
+      </div>
+
+      <!-- What happens next -->
+      <h2 class="next-heading">Next steps</h2>
+      <ol class="next-list" aria-label="What happens after submission" data-annotation='{"type":"OOTB","name":"Flow","effort":"S","note":"Flow screen — static text component"}'>
+        <li>
+          <span class="next-num" aria-hidden="true">1</span>
+          <span>LAQ will assess your application — usually within 5 business days.</span>
+        </li>
+        <li>
+          <span class="next-num" aria-hidden="true">2</span>
+          <span>You will receive a decision letter by your preferred notification method.</span>
+        </li>
+        <li>
+          <span class="next-num" aria-hidden="true">3</span>
+          <span>If approved, your grant of aid file will appear under My files.</span>
+        </li>
+      </ol>
+
+      <p class="notification-note" data-annotation='{"type":"OOTB","name":"Flow","effort":"S","note":"Flow screen — link to notification preferences"}'>
+        Notifications will be sent via your preferred channel.
+        <a href="#">Update your preferences in the Notifications centre.</a>
+      </p>
+
+      <hr class="card-divider">
+
+      <!-- Action buttons -->
+      <div class="action-row" data-annotation='{"type":"OOTB","name":"Flow","effort":"S","note":"Flow screen navigation buttons"}'>
+        <a href="#" class="btn btn-neutral">Return to home</a>
+        <a href="S06_lodge_application.html" class="btn btn-primary">Start another application</a>
+      </div>
+
+      <!-- Secondary text links -->
+      <div class="text-links">
+        <button class="text-link" type="button"
+          onclick="window.print()">Print receipt</button>
+        <button class="text-link" type="button">Email me a copy</button>
+      </div>
+
+    </div>
+    <!-- /confirm-card -->
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-main">
+      <div class="footer-col-primary">
+        <p class="footer-heading">Welcome to the Legal Aid Queensland Practitioner Portal!</p>
+        <p class="footer-body">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      </div>
+      <div class="footer-col-visit">
+        <p class="footer-col-heading">Visit us</p>
+        <p class="footer-address">Head office<br>44 Herschel Street<br>Brisbane Qld 4000</p>
+        <a href="#" class="footer-more-link">More contact details</a>
+      </div>
+      <div>
+        <p class="footer-col-heading">Stay connected</p>
+        <div class="footer-social-icons" aria-label="Social media links">
+          <a href="#" class="footer-social-icon" aria-label="Facebook"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="3" stroke="#181818" stroke-width="1.5" fill="none"/><path d="M11 10h2l0.5-2.5H11V6c0-0.7 0.3-1 1-1h1.5V2.5A12 12 0 0011 2.5C9 2.5 8 3.5 8 5.5V7.5H6V10h2v7h3V10z" fill="#181818"/></svg></a>
+          <a href="#" class="footer-social-icon" aria-label="Instagram"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="17" height="17" rx="4" stroke="#181818" stroke-width="1.5" fill="none"/><circle cx="10" cy="10" r="3.5" stroke="#181818" stroke-width="1.5" fill="none"/><circle cx="14.5" cy="5.5" r="1" fill="#181818"/></svg></a>
+          <a href="#" class="footer-social-icon" aria-label="LinkedIn"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="1" width="18" height="18" rx="3" stroke="#181818" stroke-width="1.5" fill="none"/><path d="M5 8h2v7H5V8zm1-3a1 1 0 110 2 1 1 0 010-2zm3 3h2v1c.4-.7 1.2-1.2 2-1.2 2 0 2.5 1.3 2.5 3V15h-2v-3.5c0-.9-.3-1.5-1-1.5s-1.5.6-1.5 1.5V15H9V8z" fill="#181818"/></svg></a>
+          <a href="#" class="footer-social-icon" aria-label="YouTube"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="1" y="4" width="18" height="12" rx="3" stroke="#181818" stroke-width="1.5" fill="none"/><polygon points="8,7.5 13.5,10 8,12.5" fill="#181818"/></svg></a>
+          <a href="#" class="footer-social-icon" aria-label="X (Twitter)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 3l5.5 7L3 17h2l4.3-5.3L14 17h4l-5.8-7.4L17.5 3h-2l-3.8 4.7L6 3H3z" fill="#181818"/></svg></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="#">Terms of Use</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Accessibility</a>
+    </div>
+  </footer>
+
+  <script src="annotations.js"></script>
+</body>
+</html>

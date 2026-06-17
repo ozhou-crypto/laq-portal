@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<!--
+  S20 — User & licence management (firm admin) — v3
+  =====================================================
+  Design rationale (~200 words):
+
+  Layout: LWR Single-Column. Firm-location licence meter at the top (one
+  meter per location), user list below, Invite user CTA top-right.
+
+  Licence caps are enforced at the firm-location level (3 per location).
+  Each meter shows "X of 3 used" with a horizontal progress bar colour-
+  coded: blue when under, amber at cap, red when over-cap-requested. The
+  at-cap / over-cap states surface a "Request more licences" action which
+  launches an OmniScript workflow and displays its current LAQ approval
+  state ("Awaiting LAQ approval — submitted 24 Apr 2026").
+
+  User list columns match the brief — Name, Role (Practitioner / Support),
+  Location, Status, Last active. Row actions include Edit role,
+  Deactivate, Resend invite. Pending invites appear greyed with a "Pending"
+  badge.
+
+  Invite flow is a modal with Role picker + Location picker + email. If
+  the location is at cap the modal shows the over-cap messaging and
+  offers to queue the invite or request more licences.
+
+  Delegation approval appears in the secondary panel at the bottom: when
+  a practitioner delegates portal access to a support user, LAQ approves
+  the delegation before access is granted.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>User & licence management — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+    --warning: #8A4500; --warning-bg: #FEF3E2; --warning-border: #F5C06E;
+    --success: #1E7E34; --success-bg: #EBF5EB; --success-border: #A3D9A5;
+    --error: #C0392B; --error-bg: #FDECEB;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1,h2,h3 { margin: 0; }
+
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; position: relative; }
+  .icon-btn .count { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #C0392B; border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .avatar { border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .avatar.sm { width: 26px; height: 26px; font-size: 10px; }
+  .avatar.md { width: 32px; height: 32px; font-size: 12px; }
+  .avatar.support { background: #6B21A8; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; text-decoration: none; color: var(--text); }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .annot.ootb { background: #E6F4EA; color: #1E7E34; }
+  .annot.omniscript { background: #FFF0F0; color: #9B1C1C; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .page-head h1 { font-size: 22px; font-weight: 800; color: var(--navy); display: inline-flex; align-items: center; gap: 10px; }
+  .page-head .sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  .btn { height: 36px; padding: 0 16px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+
+  /* Licence meters */
+  .meter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .meter-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .meter-card.at-cap { border-left: 4px solid var(--warning); }
+  .meter-card.over { border-left: 4px solid var(--error); }
+  .meter-card.under { border-left: 4px solid var(--sapphire); }
+  .meter-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .meter-loc { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .meter-count { font-size: 18px; font-weight: 800; color: var(--navy); }
+  .meter-count .total { color: var(--text-muted); font-weight: 500; }
+  .meter-bar { height: 6px; background: var(--border-light); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .meter-fill { height: 100%; border-radius: 3px; }
+  .meter-card.under .meter-fill { background: var(--sapphire); }
+  .meter-card.at-cap .meter-fill { background: var(--warning); }
+  .meter-card.over .meter-fill { background: var(--error); }
+  .meter-status { font-size: 12px; }
+  .status-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; margin-right: 6px; }
+  .status-pill.good { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .status-pill.warn { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+  .status-pill.pending { background: var(--info-bg); color: var(--sapphire); border: 1px solid var(--info-border); }
+  .meter-actions { margin-top: 10px; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 18px; }
+  .card-head { padding: 12px 18px; border-bottom: 1px solid var(--border-light); background: #FAFBFC; display: flex; justify-content: space-between; align-items: center; }
+  .card-head h2 { font-size: 14px; font-weight: 700; }
+
+  .dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .dt thead tr { background: var(--surface); border-bottom: 1px solid var(--border-light); }
+  .dt th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; }
+  .dt tbody tr { border-bottom: 1px solid var(--border-light); }
+  .dt tbody tr:last-child { border-bottom: none; }
+  .dt tbody tr.pending-row { background: var(--surface); color: var(--text-muted); }
+  .dt td { padding: 12px 14px; vertical-align: middle; }
+  .user-cell { display: flex; align-items: center; gap: 10px; }
+  .user-email { font-size: 11px; color: var(--text-muted); }
+  .role-chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 3px; background: var(--info-bg); color: var(--sapphire); }
+  .role-chip.support { background: #F0E6FF; color: #6B21A8; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.active { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .badge.active .dot { background: var(--success); }
+  .badge.pending { background: var(--info-bg); color: var(--sapphire); border: 1px solid var(--info-border); }
+  .badge.pending .dot { background: var(--sapphire); }
+  .badge.inactive { background: #F4F6F9; color: #5C6B7A; border: 1px solid #5C6B7A22; }
+  .badge.inactive .dot { background: #5C6B7A; }
+
+  /* Delegation panel */
+  .del-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--border-light); }
+  .del-row:last-child { border-bottom: none; }
+  .del-info { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 40px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+    </a>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="S22_notifications.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="count">2</span></a>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html" aria-current="page">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="page-head">
+      <div>
+        <h1>User &amp; licence management <span class="annot">⚡ OOtB: User Administration</span></h1>
+        <div class="sub">Firm admin: Halloran &amp; Associates · 2 firm-locations</div>
+      </div>
+      <button class="btn btn-primary">+ Invite user</button>
+    </div>
+
+    <!-- Licence meters -->
+    <h2 style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Licence usage per firm-location</h2>
+    <div class="meter-grid">
+
+      <div class="meter-card under">
+        <div class="meter-head">
+          <span class="meter-loc">Brisbane CBD</span>
+          <span class="meter-count">2<span class="total"> of 3</span></span>
+        </div>
+        <div class="meter-bar"><div class="meter-fill" style="width:66%;"></div></div>
+        <div class="meter-status">
+          <span class="status-pill good">✓ Under cap</span>
+          <span>1 licence available · 2 active, 0 pending</span>
+        </div>
+      </div>
+
+      <div class="meter-card at-cap">
+        <div class="meter-head">
+          <span class="meter-loc">Cairns</span>
+          <span class="meter-count">3<span class="total"> of 3</span></span>
+        </div>
+        <div class="meter-bar"><div class="meter-fill" style="width:100%;"></div></div>
+        <div class="meter-status">
+          <span class="status-pill warn">⚠ At cap</span>
+          <span>No licences available · 2 active, 1 pending</span>
+        </div>
+        <div class="meter-actions">
+          <button class="btn btn-secondary sm">Request more licences</button>
+          <span class="annot omniscript" style="margin-left:6px;">📋 OmniScript (request)</span>
+        </div>
+      </div>
+
+      <div class="meter-card over">
+        <div class="meter-head">
+          <span class="meter-loc">Townsville (planned)</span>
+          <span class="meter-count">0<span class="total"> of 0</span></span>
+        </div>
+        <div class="meter-bar"><div class="meter-fill" style="width:100%;"></div></div>
+        <div class="meter-status">
+          <span class="status-pill pending">⏱ Awaiting LAQ approval</span>
+          <span>Requested 3 licences on 24 Apr 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- User list -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Users</h2>
+        <span class="annot">⚡ OOtB: User List</span>
+      </div>
+      <table class="dt">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Last active</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar md">JH</span>
+                <div>
+                  <div style="font-weight:600;">James Halloran</div>
+                  <div class="user-email">j.halloran@halloran-associates.com.au</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-chip">Practitioner</span><br><span style="font-size:10px;color:var(--text-muted);">Firm admin</span></td>
+            <td>Brisbane CBD</td>
+            <td><span class="badge active"><span class="dot"></span>Active</span></td>
+            <td class="user-email">Today, 9:02 am</td>
+            <td><button class="btn btn-secondary sm">Edit</button></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar md support">RN</span>
+                <div>
+                  <div style="font-weight:600;">R. Nguyen</div>
+                  <div class="user-email">r.nguyen@halloran-associates.com.au</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-chip support">Support</span></td>
+            <td>Brisbane CBD</td>
+            <td><span class="badge active"><span class="dot"></span>Active</span></td>
+            <td class="user-email">Today, 7:44 am</td>
+            <td><button class="btn btn-secondary sm">Edit</button></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar md">MK</span>
+                <div>
+                  <div style="font-weight:600;">Maya Kahi</div>
+                  <div class="user-email">m.kahi@halloran-associates.com.au</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-chip">Practitioner</span></td>
+            <td>Cairns</td>
+            <td><span class="badge active"><span class="dot"></span>Active</span></td>
+            <td class="user-email">Yesterday, 5:12 pm</td>
+            <td><button class="btn btn-secondary sm">Edit</button></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar md support">DK</span>
+                <div>
+                  <div style="font-weight:600;">D. Koh</div>
+                  <div class="user-email">d.koh@halloran-associates.com.au</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-chip support">Support</span></td>
+            <td>Cairns</td>
+            <td><span class="badge active"><span class="dot"></span>Active</span></td>
+            <td class="user-email">22 Apr 2026</td>
+            <td><button class="btn btn-secondary sm">Edit</button></td>
+          </tr>
+          <tr class="pending-row">
+            <td>
+              <div class="user-cell">
+                <span class="avatar md" style="background:var(--text-muted);">HL</span>
+                <div>
+                  <div style="font-weight:600;">Hannah Liu</div>
+                  <div class="user-email">h.liu@halloran-associates.com.au</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-chip">Practitioner</span></td>
+            <td>Cairns</td>
+            <td><span class="badge pending"><span class="dot"></span>Pending invite</span></td>
+            <td class="user-email">Invited 20 Apr 2026</td>
+            <td><button class="btn btn-secondary sm">Resend</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Delegation panel -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Delegated access awaiting LAQ approval</h2>
+        <span class="annot omniscript">📋 OmniScript (delegation approval)</span>
+      </div>
+      <div class="del-row">
+        <div class="del-info">
+          <span class="avatar md support">DK</span>
+          <div>
+            <strong>D. Koh</strong> (Support, Cairns) delegated by <strong>Maya Kahi</strong> on 20 Apr 2026
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Access: draft applications, document uploads on files assigned to Maya Kahi</div>
+          </div>
+        </div>
+        <span class="badge pending"><span class="dot"></span>Awaiting LAQ</span>
+      </div>
+      <div class="del-row">
+        <div class="del-info">
+          <span class="avatar md support">RN</span>
+          <div>
+            <strong>R. Nguyen</strong> (Support, Brisbane CBD) delegated by <strong>J. Halloran</strong> on 12 Jan 2026
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Access: all files assigned to J. Halloran</div>
+          </div>
+        </div>
+        <span class="badge active"><span class="dot"></span>Approved</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

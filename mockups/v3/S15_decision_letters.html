@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<!--
+  S15 — Historical decision letters viewer — v3
+  ================================================
+  Design rationale (~200 words):
+
+  Layout: LWR Two-Column. Left column (320px) is a letter list grouped by
+  year with a search box; right column is a reader pane with an embedded
+  PDF viewer (OOtB Files Preview), a metadata strip above it and action
+  buttons below it. The reader is read-only — decision letters are
+  immutable artefacts issued by LAQ.
+
+  Search is positioned above the list and searches by client name,
+  Q-number, or keyword. Year-group headers use the same SLDS group-header
+  pattern as notifications (S22).
+
+  The metadata strip above the PDF shows: decision type, issue date, LAQ
+  officer, outcome and an "Acknowledge" call to action when the letter has
+  not yet been acknowledged by the firm. Acknowledgement is mandatory for
+  some decisions (e.g. grant of aid, refusal) and optional for others.
+
+  Actions below the PDF: Acknowledge (primary, hidden when already ack'd),
+  Download, Print. A small audit note records who acknowledged and when.
+
+  A restricted state is shown at the bottom of the list: when a letter was
+  issued to a different firm-location, the row shows an info icon and the
+  body copy explains that access is restricted for data-sharing reasons.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Decision letters — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --teal: #0F8291;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+    --warning: #8A4500; --warning-bg: #FEF3E2; --warning-border: #F5C06E;
+    --success: #1E7E34; --success-bg: #EBF5EB;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1,h2 { margin: 0; }
+
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; position: relative; }
+  .icon-btn .count { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #C0392B; border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; text-decoration: none; color: var(--text); }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; background: #E6F4EA; color: #1E7E34; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+  .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+  .page-head h1 { font-size: 20px; font-weight: 800; color: var(--navy); display: inline-flex; align-items: center; gap: 10px; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+  .split { display: grid; grid-template-columns: 340px 1fr; min-height: 620px; }
+
+  /* List pane */
+  .list-pane { border-right: 1px solid var(--border-light); display: flex; flex-direction: column; }
+  .list-head { padding: 12px 14px; border-bottom: 1px solid var(--border-light); }
+  .search-input { width: 100%; height: 34px; border: 1px solid var(--border); border-radius: 3px; padding: 0 10px; font-size: 13px; outline: none; font-family: inherit; }
+  .search-input:focus { border-color: var(--sapphire); box-shadow: 0 0 0 3px var(--info-bg); }
+  .list-body { flex: 1; overflow-y: auto; }
+  .year-head {
+    padding: 6px 14px; font-size: 10px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    background: var(--surface); border-bottom: 1px solid var(--border-light);
+  }
+  .letter-row {
+    padding: 12px 14px; border-bottom: 1px solid var(--border-light);
+    cursor: pointer; display: block; text-decoration: none; color: inherit;
+  }
+  .letter-row:hover { background: var(--surface); }
+  .letter-row.selected { background: #F1F7FD; border-left: 3px solid var(--sapphire); padding-left: 11px; }
+  .letter-row.restricted { cursor: not-allowed; opacity: 0.6; background: var(--surface); }
+  .lr-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .lr-type { font-size: 13px; font-weight: 700; color: var(--text); }
+  .lr-row.selected .lr-type { color: var(--navy); }
+  .lr-date { font-size: 11px; color: var(--text-muted); }
+  .lr-client { font-size: 12px; color: var(--text); margin-top: 3px; }
+  .lr-q { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 11px; color: var(--text-muted); }
+  .ack-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 2px; background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); margin-top: 4px; }
+  .ack-done { background: var(--success-bg); color: var(--success); border-color: #A3D9A5; }
+  .restricted-text { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+
+  /* Reader pane */
+  .reader-pane { display: flex; flex-direction: column; }
+  .reader-meta { padding: 14px 20px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; background: #FAFBFC; }
+  .meta-grid { display: grid; grid-template-columns: repeat(3, auto); gap: 18px; }
+  .meta-grid dt { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+  .meta-grid dd { font-size: 13px; font-weight: 600; }
+  .reader-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .btn { height: 36px; padding: 0 14px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+
+  /* PDF viewer mock */
+  .pdf-stage { flex: 1; background: #3A3F47; padding: 20px; display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; }
+  .pdf-page {
+    width: 100%; max-width: 640px; background: #fff; color: var(--text);
+    padding: 48px 56px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    font-size: 14px; line-height: 1.6;
+  }
+  .pdf-page h3 { color: var(--navy); font-size: 18px; margin-bottom: 8px; }
+  .pdf-page .laq-addr { font-size: 12px; color: var(--text-muted); margin-bottom: 22px; }
+  .pdf-page p { margin-bottom: 12px; }
+  .pdf-page .sig { margin-top: 22px; }
+
+  .ack-note { padding: 10px 20px; background: var(--success-bg); border-top: 1px solid var(--success-border); font-size: 12px; color: var(--success); }
+  .ack-note svg { vertical-align: text-bottom; margin-right: 4px; }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 40px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+
+  @media (max-width: 900px) { .split { grid-template-columns: 1fr; } .list-pane { border-right: none; border-bottom: 1px solid var(--border-light); max-height: 300px; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+    </a>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="S22_notifications.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="count">2</span></a>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html" aria-current="page">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="page-head">
+      <h1>Decision letters <span class="annot">⚡ OOtB: Files Preview + Related List</span></h1>
+    </div>
+
+    <div class="card">
+      <div class="split">
+
+        <aside class="list-pane" aria-label="Decision letter list">
+          <div class="list-head">
+            <input class="search-input" placeholder="Search by client, Q-number or keyword…" aria-label="Search decision letters" />
+          </div>
+          <div class="list-body">
+
+            <div class="year-head">2026</div>
+
+            <a class="letter-row selected" href="#" aria-current="true">
+              <div class="lr-head"><span class="lr-type">Grant approved</span><span class="lr-date">18 Apr 2026</span></div>
+              <div class="lr-client">Sarah Mitchell</div>
+              <div class="lr-q">Q-2024-001847</div>
+              <span class="ack-pill">⚠ Acknowledgement required</span>
+            </a>
+
+            <a class="letter-row" href="#">
+              <div class="lr-head"><span class="lr-type">Scope extension</span><span class="lr-date">02 Mar 2026</span></div>
+              <div class="lr-client">Sarah Mitchell</div>
+              <div class="lr-q">Q-2024-001847</div>
+              <span class="ack-pill ack-done">✓ Acknowledged</span>
+            </a>
+
+            <a class="letter-row" href="#">
+              <div class="lr-head"><span class="lr-type">Initial grant</span><span class="lr-date">10 Jan 2026</span></div>
+              <div class="lr-client">Sarah Mitchell</div>
+              <div class="lr-q">Q-2024-001847</div>
+              <span class="ack-pill ack-done">✓ Acknowledged</span>
+            </a>
+
+            <a class="letter-row" href="#">
+              <div class="lr-head"><span class="lr-type">Initial grant</span><span class="lr-date">15 Feb 2026</span></div>
+              <div class="lr-client">Daniel Thompson</div>
+              <div class="lr-q">Q-2024-003291</div>
+              <span class="ack-pill ack-done">✓ Acknowledged</span>
+            </a>
+
+            <div class="year-head">2025</div>
+
+            <a class="letter-row" href="#">
+              <div class="lr-head"><span class="lr-type">Grant refused</span><span class="lr-date">28 Nov 2025</span></div>
+              <div class="lr-client">Anita Patel</div>
+              <div class="lr-q">Q-2025-009654</div>
+              <span class="ack-pill ack-done">✓ Acknowledged</span>
+            </a>
+
+            <a class="letter-row" href="#">
+              <div class="lr-head"><span class="lr-type">Initial grant</span><span class="lr-date">14 Sep 2025</span></div>
+              <div class="lr-client">Ethan Nguyen</div>
+              <div class="lr-q">Q-2024-005112</div>
+              <span class="ack-pill ack-done">✓ Acknowledged</span>
+            </a>
+
+            <div class="year-head">2024</div>
+
+            <a class="letter-row restricted" aria-disabled="true">
+              <div class="lr-head"><span class="lr-type">Initial grant</span><span class="lr-date">22 Jul 2024</span></div>
+              <div class="lr-client">Marcus Williams</div>
+              <div class="lr-q">Q-2024-002874</div>
+              <div class="restricted-text">🔒 Issued to a different firm-location — access restricted.</div>
+            </a>
+
+          </div>
+        </aside>
+
+        <section class="reader-pane" aria-label="Decision letter reader">
+          <div class="reader-meta">
+            <dl class="meta-grid">
+              <div><dt>Decision</dt><dd>Grant approved</dd></div>
+              <div><dt>Issue date</dt><dd>18 Apr 2026</dd></div>
+              <div><dt>LAQ officer</dt><dd>Patricia Yuen</dd></div>
+              <div><dt>Outcome</dt><dd>Scope extended to AUD 4,200.00</dd></div>
+              <div><dt>File</dt><dd>Q-2024-001847 — Sarah Mitchell</dd></div>
+              <div><dt>Status</dt><dd style="color:var(--warning);">Acknowledgement required</dd></div>
+            </dl>
+            <div class="reader-actions">
+              <button class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download
+              </button>
+              <button class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Print
+              </button>
+              <button class="btn btn-primary">Acknowledge receipt</button>
+            </div>
+          </div>
+
+          <div class="pdf-stage" role="region" aria-label="Letter PDF preview">
+            <article class="pdf-page">
+              <h3>Legal Aid Queensland</h3>
+              <div class="laq-addr">44 Herschel Street, Brisbane QLD 4000 · www.legalaid.qld.gov.au</div>
+
+              <p style="font-size:12px;color:var(--text-muted);">18 April 2026</p>
+
+              <p>J. Halloran<br>Halloran &amp; Associates<br>Level 8, 288 Queen Street<br>Brisbane QLD 4000</p>
+
+              <h3 style="margin-top:18px;">Decision: Grant of aid approved (scope extension)</h3>
+              <p><strong>Client:</strong> Sarah Mitchell<br>
+              <strong>File:</strong> Q-2024-001847<br>
+              <strong>Matter type:</strong> Family Law — parenting orders</p>
+
+              <p>We have considered your application dated 10 April 2026 for a scope extension to the grant of legal aid in the above matter.</p>
+
+              <p>I write to advise that a scope extension has been approved, increasing the total grant to <strong>AUD 4,200.00</strong> (inclusive of GST where applicable). This extension covers preparation and appearance at the interim hearing listed for 12 May 2026.</p>
+
+              <p>Conditions 1 and 2 of the original grant remain in force. You will find the updated grant summary on your file in the Practitioner Portal.</p>
+
+              <p>Please acknowledge receipt of this decision via the Practitioner Portal by 2 May 2026.</p>
+
+              <p class="sig">Yours faithfully,<br><br>Patricia Yuen<br>Grants Officer — Family Law</p>
+            </article>
+          </div>
+
+          <div class="ack-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Once acknowledged, a record will be written to the file's audit log.
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

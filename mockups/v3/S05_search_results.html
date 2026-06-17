@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<!--
+  S05 — Global search results — v3
+  ===================================
+  Design rationale (~200 words):
+
+  Layout: LWR Flexible — full-width search header band (OOtB Global Search),
+  then a two-column body: 240px filter rail on the left (OOtB Refiners),
+  central result stream (OOtB Global Search Results), and a saved-searches
+  panel anchored to the right of the filter rail as a separate card below.
+
+  The search header sits within the normal site header; the result stream
+  groups matches by record type (Files, Clients, Correspondence, Decisions)
+  and renders each as a row with a type badge, title, highlighted snippet
+  and metadata line. A 4px navy left accent marks the active result type in
+  the filter rail. Zero-results state and saved-search shortcuts are shown
+  at the end of the stream.
+
+  Everything on this page is OOtB Experience Cloud — the Global Search
+  template component already supports federated search across standard and
+  custom objects, predictive type-ahead, saved searches and result refiners.
+
+  Accessibility: the predictive dropdown has role="listbox"; filter
+  checkboxes are keyboard-operable; result rows use h3 for their title so
+  screen readers can jump between matches; zero-results is announced with
+  aria-live="polite" when filters change.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Search — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --teal: #0F8291;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF;
+    --highlight: #FFF3B8;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1,h2,h3 { margin: 0; }
+
+  /* SHELL */
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .search-wrap { flex: 1; max-width: 620px; position: relative; margin: 0 16px; }
+  .search-input { width: 100%; height: 40px; border: 1px solid var(--border); border-radius: 3px; padding-left: 36px; padding-right: 36px; font-size: 14px; outline: none; font-family: inherit; background: #fff; }
+  .search-input:focus { border-color: var(--sapphire); box-shadow: 0 0 0 3px var(--info-bg); }
+  .search-wrap > svg.icon-search { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  .clear-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 6px; }
+
+  /* Predictive dropdown */
+  .predict { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: 3px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); z-index: 40; max-height: 320px; overflow-y: auto; }
+  .predict-group { padding: 6px 0; border-bottom: 1px solid var(--border-light); }
+  .predict-group:last-child { border-bottom: none; }
+  .predict-grouphead { padding: 4px 14px; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .predict-item { padding: 8px 14px; font-size: 13px; cursor: pointer; display: flex; gap: 10px; align-items: center; }
+  .predict-item:hover { background: var(--surface); }
+  .predict-item .type-badge { font-size: 10px; padding: 2px 6px; border-radius: 2px; background: var(--info-bg); color: var(--sapphire); font-weight: 700; flex-shrink: 0; }
+
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; position: relative; }
+  .icon-btn .count { position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; background: #C0392B; border-radius: 7px; font-size: 9px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; background: #E6F4EA; color: #1E7E34; white-space: nowrap; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+
+  .result-summary { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .result-summary strong { color: var(--text); }
+
+  .grid { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+
+  /* Filter rail */
+  .rail-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .rail-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+  .filter-group { margin-bottom: 16px; }
+  .filter-group h4 { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .cb-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; cursor: pointer; }
+  .cb-row input { width: 14px; height: 14px; accent-color: var(--sapphire); }
+  .cb-count { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+  .filter-group.active h4 { color: var(--navy); }
+  .date-input { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 3px; padding: 0 8px; font-size: 12px; font-family: inherit; outline: none; }
+  .saved-list a { display: block; font-size: 13px; padding: 5px 0; color: var(--sapphire); text-decoration: none; }
+  .saved-list a:hover { text-decoration: underline; }
+
+  /* Results */
+  .results { display: flex; flex-direction: column; gap: 12px; }
+  .result-row {
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px 18px; text-decoration: none; color: inherit; display: block;
+    border-left: 4px solid var(--sapphire);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .result-row:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+  .result-row.type-file { border-left-color: var(--navy); }
+  .result-row.type-client { border-left-color: var(--sapphire); }
+  .result-row.type-corr { border-left-color: var(--teal); }
+  .result-row.type-decision { border-left-color: #8A4500; }
+  .result-row.type-kb { border-left-color: #6B21A8; }
+
+  .rr-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+  .type-pill { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; background: var(--info-bg); color: var(--sapphire); text-transform: uppercase; letter-spacing: 0.06em; }
+  .type-pill.file { background: #E8ECF5; color: var(--navy); }
+  .type-pill.client { background: var(--info-bg); color: var(--sapphire); }
+  .type-pill.corr { background: #E8F3F5; color: var(--teal); }
+  .type-pill.decision { background: #FEF3E2; color: #8A4500; }
+  .type-pill.kb { background: #F0E6FF; color: #6B21A8; }
+  .rr-title { font-size: 15px; font-weight: 700; color: var(--sapphire); }
+  .rr-q { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text-muted); font-size: 12px; }
+  .rr-snippet { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+  .rr-snippet mark { background: var(--highlight); padding: 0 2px; border-radius: 2px; }
+  .rr-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 14px; flex-wrap: wrap; }
+
+  .zero-card { background: var(--surface); border: 1px dashed var(--border); border-radius: 4px; padding: 24px; text-align: center; color: var(--text-muted); margin-top: 12px; }
+  .zero-card strong { color: var(--text); display: block; margin-bottom: 6px; }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 40px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+    </a>
+    <div class="search-wrap">
+      <svg class="icon-search" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" value="mitchell" aria-label="Global search" />
+      <button class="clear-btn" aria-label="Clear search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="predict" role="listbox" aria-label="Search suggestions">
+        <div class="predict-group">
+          <div class="predict-grouphead">Files</div>
+          <a class="predict-item" href="S11_file_detail.html" role="option"><span class="type-badge">File</span> Sarah Mitchell — Q-2024-001847</a>
+        </div>
+        <div class="predict-group">
+          <div class="predict-grouphead">Clients</div>
+          <a class="predict-item" href="S11_file_detail.html" role="option"><span class="type-badge">Client</span> Sarah Mitchell · Family Law · 1 file</a>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="S22_notifications.html" aria-label="Notifications"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="count">2</span></a>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="result-summary">
+      Showing <strong>11 results</strong> for "<strong>mitchell</strong>" <span class="annot" style="margin-left:8px;">⚡ OOtB: Global Search Results</span>
+    </div>
+
+    <div class="grid">
+
+      <aside>
+        <div class="rail-card">
+          <div class="rail-title">Filters <span class="annot" style="margin-left:6px;">⚡ OOtB: Refiners</span></div>
+
+          <div class="filter-group active">
+            <h4>Type</h4>
+            <label class="cb-row"><input type="checkbox" checked /> Files <span class="cb-count">6</span></label>
+            <label class="cb-row"><input type="checkbox" checked /> Clients <span class="cb-count">2</span></label>
+            <label class="cb-row"><input type="checkbox" checked /> Correspondence <span class="cb-count">2</span></label>
+            <label class="cb-row"><input type="checkbox" checked /> Decisions <span class="cb-count">1</span></label>
+          </div>
+
+          <div class="filter-group">
+            <h4>Status</h4>
+            <label class="cb-row"><input type="checkbox" /> Active <span class="cb-count">4</span></label>
+            <label class="cb-row"><input type="checkbox" /> Awaiting LAQ <span class="cb-count">1</span></label>
+            <label class="cb-row"><input type="checkbox" /> Closed <span class="cb-count">1</span></label>
+          </div>
+
+          <div class="filter-group">
+            <h4>Date range</h4>
+            <label class="cb-row" style="flex-direction:column;align-items:flex-start;gap:4px;"><span style="font-size:11px;color:var(--text-muted);">From</span><input class="date-input" value="01 Jan 2024" /></label>
+            <label class="cb-row" style="flex-direction:column;align-items:flex-start;gap:4px;margin-top:6px;"><span style="font-size:11px;color:var(--text-muted);">To</span><input class="date-input" value="27 Apr 2026" /></label>
+          </div>
+
+          <div class="filter-group">
+            <h4>Firm location</h4>
+            <label class="cb-row"><input type="checkbox" checked /> Brisbane CBD <span class="cb-count">10</span></label>
+            <label class="cb-row"><input type="checkbox" /> Cairns <span class="cb-count">2</span></label>
+          </div>
+
+          <div class="filter-group">
+            <h4>Q-number</h4>
+            <input class="date-input" placeholder="e.g. Q-2024" />
+          </div>
+        </div>
+
+        <div class="rail-card">
+          <div class="rail-title">Saved searches</div>
+          <div class="saved-list">
+            <a href="#">Active files awaiting LAQ</a>
+            <a href="#">Family Law matters this quarter</a>
+            <a href="#">Invoices over AUD 5,000</a>
+          </div>
+        </div>
+      </aside>
+
+      <div class="results">
+        <a class="result-row type-file" href="S11_file_detail.html">
+          <div class="rr-head">
+            <span class="type-pill file">File</span>
+            <h3 class="rr-title">Sarah Mitchell</h3>
+            <span class="rr-q">Q-2024-001847</span>
+          </div>
+          <div class="rr-snippet">Family Law matter — parenting orders, interim hearing. <mark>Mitchell</mark> v Mitchell, Federal Circuit and Family Court, Brisbane registry.</div>
+          <div class="rr-meta">
+            <span>Status: Active</span>
+            <span>LAQ contact: Patricia Yuen</span>
+            <span>Last activity: 22 Apr 2026</span>
+          </div>
+        </a>
+
+        <a class="result-row type-client" href="S11_file_detail.html">
+          <div class="rr-head">
+            <span class="type-pill client">Client</span>
+            <h3 class="rr-title">Sarah Mitchell</h3>
+          </div>
+          <div class="rr-snippet">Client with <mark>1</mark> active file and <mark>3</mark> historical files. First grant approved 10 Jan 2026.</div>
+          <div class="rr-meta">
+            <span>Matter types: Family Law</span>
+            <span>Firm: Halloran &amp; Associates</span>
+          </div>
+        </a>
+
+        <a class="result-row type-corr" href="S12_correspondence.html">
+          <div class="rr-head">
+            <span class="type-pill corr">Correspondence</span>
+            <h3 class="rr-title">Information request — Q-2024-001847</h3>
+            <span class="rr-q">Today, 9:14 am</span>
+          </div>
+          <div class="rr-snippet">LAQ has requested additional information for the <mark>Mitchell</mark> matter by 30 April 2026.</div>
+          <div class="rr-meta">
+            <span>From: Patricia Yuen (LAQ)</span>
+            <span>Thread · 3 messages</span>
+          </div>
+        </a>
+
+        <a class="result-row type-decision" href="S15_decision_letters.html">
+          <div class="rr-head">
+            <span class="type-pill decision">Decision</span>
+            <h3 class="rr-title">Grant approved — Q-2024-001847</h3>
+            <span class="rr-q">18 Apr 2026</span>
+          </div>
+          <div class="rr-snippet">Decision letter issued for <mark>Mitchell</mark>, approving scope extension to AUD 4,200.00. Acknowledgement required.</div>
+          <div class="rr-meta">
+            <span>Officer: Patricia Yuen</span>
+            <span>Acknowledgement: required</span>
+          </div>
+        </a>
+
+        <div class="zero-card">
+          <strong>Can't find what you need?</strong>
+          Try broadening the date range, or save this search so you can re-run it without retyping.
+          <div style="margin-top:10px;"><a href="#" style="color:var(--sapphire);font-weight:600;">+ Save this search</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

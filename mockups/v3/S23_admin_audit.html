@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<!--
+  S23 — Admin audit log & access overview — v3
+  ===============================================
+  Design rationale (~200 words):
+
+  Layout: LWR Single-Column admin console with deliberately distinct chrome
+  from the practitioner portal — darker navy header band and an "Admin"
+  strip beneath the nav — so it is obvious the LAQ System Administrator is
+  looking at internal audit data, not client-facing content.
+
+  Top of the page: a 4-tile KPI strip (active users, licences in use, WCAG
+  issues open, privacy acknowledgements pending). Below, a filter row
+  (user, firm, action type, date range) sits above the main audit log
+  table with all seven columns (Timestamp, Actor, Acting on behalf of,
+  Action, Target, IP, Result).
+
+  The Export action opens a small prompt that captures an audit reason
+  before generating the CSV/JSON — every export is itself a logged audit
+  event. The bottom Access Overview panel shows delegated relationships
+  across the tenant with expand affordances to inspect the actual access
+  each delegate has.
+
+  Build approach: Event Monitoring + Reports for the KPI tiles, a Report
+  List component for the table, and a small FlexCard for the export
+  prompt. The darker chrome is a branding override on this Experience
+  Builder page only.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin audit log — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --admin-navy: #031A2E;
+    --navy: #05325F; --sapphire: #09549F;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+    --warning: #8A4500; --warning-bg: #FEF3E2; --warning-border: #F5C06E;
+    --success: #1E7E34; --success-bg: #EBF5EB; --success-border: #A3D9A5;
+    --error: #C0392B; --error-bg: #FDECEB; --error-border: #F5BDBA;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1,h2 { margin: 0; }
+
+  /* Admin-tinted header */
+  .site-header { background: var(--admin-navy); border-bottom: 1px solid #000; flex-shrink: 0; color: #fff; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-btn { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; text-decoration: none; }
+  .logo-tile { width: 44px; height: 44px; background: rgba(255,255,255,0.12); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; border: 1px solid rgba(255,255,255,0.15); }
+  .brand-name { color: #fff; font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: rgba(255,255,255,0.7); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .icon-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; color: rgba(255,255,255,0.85); padding: 6px 8px; cursor: pointer; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; cursor: pointer; padding: 4px 10px; color: #fff; text-decoration: none; }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .annot-toggle { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.25); border-radius: 3px; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.55); }
+
+  /* Admin strip under header */
+  .admin-strip {
+    background: #000C1B; color: rgba(255,255,255,0.85);
+    padding: 8px 24px; font-size: 12px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid #000;
+  }
+  .admin-strip strong { color: #fff; }
+  .admin-pill { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .annot.ootb { background: #E6F4EA; color: #1E7E34; }
+  .annot.flexcard { background: #F0E6FF; color: #6B21A8; }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; background: var(--surface); }
+  .page-wrap { max-width: 1400px; margin: 0 auto; padding: 24px; }
+  .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .page-head h1 { font-size: 22px; font-weight: 800; color: var(--navy); display: inline-flex; align-items: center; gap: 10px; }
+
+  .btn { height: 36px; padding: 0 16px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+
+  /* KPI strip */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .kpi {
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-left: 3px solid var(--navy);
+  }
+  .kpi.warn { border-left-color: var(--warning); }
+  .kpi.err { border-left-color: var(--error); }
+  .kpi.good { border-left-color: var(--success); }
+  .kpi-num { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; letter-spacing: -0.02em; }
+  .kpi.warn .kpi-num { color: var(--warning); }
+  .kpi.err .kpi-num { color: var(--error); }
+  .kpi.good .kpi-num { color: var(--success); }
+  .kpi-lbl { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Filters */
+  .filter-bar { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; margin-bottom: 16px; display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 12px; align-items: end; }
+  .fld label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .fld input, .fld select { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 3px; padding: 0 8px; font-size: 13px; outline: none; font-family: inherit; background: #fff; }
+  .fld input:focus, .fld select:focus { border-color: var(--sapphire); box-shadow: 0 0 0 2px var(--info-bg); }
+
+  /* Audit log table */
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 22px; }
+  .card-head { padding: 12px 18px; border-bottom: 1px solid var(--border-light); background: #FAFBFC; display: flex; justify-content: space-between; align-items: center; }
+  .card-head h2 { font-size: 14px; font-weight: 700; }
+
+  .dt { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dt thead tr { background: var(--surface); border-bottom: 1px solid var(--border-light); }
+  .dt th { padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; white-space: nowrap; }
+  .dt tbody tr { border-bottom: 1px solid var(--border-light); }
+  .dt tbody tr:hover { background: #FAFBFC; }
+  .dt tbody tr:last-child { border-bottom: none; }
+  .dt td { padding: 10px 12px; vertical-align: middle; }
+  .td-ts { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text-muted); white-space: nowrap; }
+  .td-ip { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text-muted); }
+  .td-action { font-weight: 600; color: var(--navy); }
+
+  .result-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 2px; }
+  .result-pill.ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .result-pill.warn { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+  .result-pill.err { background: var(--error-bg); color: var(--error); border: 1px solid var(--error-border); }
+
+  /* Export modal */
+  .scrim { position: fixed; inset: 0; background: rgba(3,26,46,0.55); display: flex; align-items: center; justify-content: center; padding: 24px 16px; z-index: 1000; }
+  .modal { background: #fff; width: 100%; max-width: 480px; border-radius: 4px; box-shadow: 0 16px 48px rgba(0,0,0,0.35); overflow: hidden; }
+  .modal-head { padding: 18px 24px 12px; border-bottom: 1px solid var(--border-light); }
+  .modal-body { padding: 18px 24px; }
+  .modal-foot { padding: 14px 24px; border-top: 1px solid var(--border-light); background: #FAFBFC; display: flex; justify-content: space-between; gap: 8px; }
+  .fld-big { margin-bottom: 14px; }
+  .fld-big label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+  textarea.input { width: 100%; height: auto; padding: 8px 10px; border: 1px solid var(--border); border-radius: 3px; resize: vertical; font-family: inherit; font-size: 13px; line-height: 1.55; outline: none; }
+  textarea.input:focus { border-color: var(--sapphire); box-shadow: 0 0 0 3px var(--info-bg); }
+  .close-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-muted); font-size: 20px; line-height: 1; }
+  .hidden { display: none !important; }
+
+  /* Access overview panel */
+  .access-row { display: grid; grid-template-columns: 1fr 1fr 180px 120px; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border-light); font-size: 13px; align-items: center; }
+  .access-row:last-child { border-bottom: none; }
+  .chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 3px; background: var(--info-bg); color: var(--sapphire); }
+  .chip.support { background: #F0E6FF; color: #6B21A8; }
+  .chip.admin { background: var(--warning-bg); color: var(--warning); }
+
+  .site-footer { background: var(--admin-navy); flex-shrink: 0; margin-top: 20px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .filter-bar { grid-template-columns: repeat(2, 1fr); } .access-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-btn" href="S04_dashboard.html">
+      <div class="logo-tile">L</div>
+      <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal — System Admin</div></div>
+    </a>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <a class="icon-btn" href="#" aria-label="System notifications"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></a>
+      <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">PF</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">P. Fraser (Admin)</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">PF</span>
+            <div>
+              <div class="pm-name">Priya Fraser</div>
+              <div class="pm-firm">LAQ — System Administration</div>
+            </div>
+          </div>
+          <a href="#" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="admin-strip">
+  <span class="admin-pill">System admin</span>
+  <strong>You are in the LAQ administrator console.</strong>
+  Actions on this page are restricted to LAQ System Administrators and are themselves audit-logged.
+</div>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="page-head">
+      <h1>Audit log &amp; access overview <span class="annot ootb">⚡ OOtB: Event Monitoring + Report List</span></h1>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary" onclick="document.getElementById('exportModal').classList.remove('hidden')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export log
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="kpi-grid">
+      <div class="kpi good">
+        <div class="kpi-num">248</div>
+        <div class="kpi-lbl">Active users (last 30 days)</div>
+        <div class="kpi-sub">+12 vs previous period</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-num">184 / 240</div>
+        <div class="kpi-lbl">Licences in use</div>
+        <div class="kpi-sub">80 firm-locations · 3 at cap</div>
+      </div>
+      <div class="kpi warn">
+        <div class="kpi-num">3</div>
+        <div class="kpi-lbl">WCAG issues open</div>
+        <div class="kpi-sub">1 critical, 2 serious</div>
+      </div>
+      <div class="kpi err">
+        <div class="kpi-num">12</div>
+        <div class="kpi-lbl">Privacy acknowledgements pending</div>
+        <div class="kpi-sub">Outstanding &gt; 7 days</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="fld">
+        <label for="f-user">User</label>
+        <input id="f-user" placeholder="Name or email" />
+      </div>
+      <div class="fld">
+        <label for="f-firm">Firm</label>
+        <select id="f-firm">
+          <option>All firms</option>
+          <option>Halloran &amp; Associates</option>
+          <option>Pine &amp; Roe</option>
+          <option>Cairns Community Legal Centre</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label for="f-action">Action type</label>
+        <select id="f-action">
+          <option>All actions</option>
+          <option>Sign in</option>
+          <option>File access</option>
+          <option>Invoice submit/cancel</option>
+          <option>User invited / role changed</option>
+          <option>Export</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label for="f-date">Date range</label>
+        <input id="f-date" value="01 Apr 2026 – 27 Apr 2026" />
+      </div>
+      <button class="btn btn-secondary" style="align-self:end;">Apply</button>
+    </div>
+
+    <!-- Audit log table -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Audit log</h2>
+        <span style="font-size:12px;color:var(--text-muted);">Showing 6 of 12,848 events</span>
+      </div>
+      <table class="dt">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Actor</th>
+            <th>Acting on behalf of</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>IP</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-ts">27 Apr 2026 · 09:14:22</td>
+            <td>J. Halloran<br><span style="font-size:11px;color:var(--text-muted);">Halloran &amp; Associates</span></td>
+            <td>—</td>
+            <td class="td-action">File opened</td>
+            <td>Q-2024-001847 (Mitchell)</td>
+            <td class="td-ip">203.29.14.88</td>
+            <td><span class="result-pill ok">✓ OK</span></td>
+          </tr>
+          <tr>
+            <td class="td-ts">27 Apr 2026 · 09:02:18</td>
+            <td>J. Halloran</td>
+            <td>—</td>
+            <td class="td-action">Sign in (MFA)</td>
+            <td>—</td>
+            <td class="td-ip">203.29.14.88</td>
+            <td><span class="result-pill ok">✓ OK</span></td>
+          </tr>
+          <tr>
+            <td class="td-ts">26 Apr 2026 · 16:42:09</td>
+            <td>R. Nguyen<br><span style="font-size:11px;color:var(--text-muted);">Halloran &amp; Associates</span></td>
+            <td>J. Halloran</td>
+            <td class="td-action">Document uploaded</td>
+            <td>Q-2024-001847 (Mitchell)</td>
+            <td class="td-ip">203.29.14.88</td>
+            <td><span class="result-pill ok">✓ OK</span></td>
+          </tr>
+          <tr>
+            <td class="td-ts">26 Apr 2026 · 14:05:53</td>
+            <td>P. Yuen<br><span style="font-size:11px;color:var(--text-muted);">LAQ — Grants</span></td>
+            <td>—</td>
+            <td class="td-action">Decision letter issued</td>
+            <td>Q-2024-001847 (Mitchell)</td>
+            <td class="td-ip">10.42.0.14</td>
+            <td><span class="result-pill ok">✓ OK</span></td>
+          </tr>
+          <tr>
+            <td class="td-ts">25 Apr 2026 · 10:11:02</td>
+            <td>H. Liu</td>
+            <td>—</td>
+            <td class="td-action">Sign in attempt</td>
+            <td>—</td>
+            <td class="td-ip">121.44.88.3</td>
+            <td><span class="result-pill err">✕ Blocked</span></td>
+          </tr>
+          <tr>
+            <td class="td-ts">24 Apr 2026 · 09:47:31</td>
+            <td>P. Fraser<br><span style="font-size:11px;color:var(--text-muted);">LAQ — System Admin</span></td>
+            <td>—</td>
+            <td class="td-action">Audit log exported (CSV)</td>
+            <td>Range 01 Apr – 24 Apr 2026</td>
+            <td class="td-ip">10.42.0.22</td>
+            <td><span class="result-pill warn">⚠ Reason logged</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Access overview -->
+    <div class="card">
+      <div class="card-head">
+        <h2>Access overview — delegated relationships</h2>
+        <span class="annot flexcard">🃏 FlexCard (delegation view)</span>
+      </div>
+
+      <div class="access-row">
+        <div><strong>R. Nguyen</strong> <span class="chip support">Support</span><br><span style="font-size:11px;color:var(--text-muted);">Halloran &amp; Associates (Brisbane CBD)</span></div>
+        <div>Delegated by <strong>J. Halloran</strong> <span class="chip">Practitioner</span><br><span style="font-size:11px;color:var(--text-muted);">Approved 12 Jan 2026 · scope: all files</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">Last used 26 Apr 2026</div>
+        <button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:12px;">Inspect</button>
+      </div>
+
+      <div class="access-row">
+        <div><strong>D. Koh</strong> <span class="chip support">Support</span><br><span style="font-size:11px;color:var(--text-muted);">Halloran &amp; Associates (Cairns)</span></div>
+        <div>Delegated by <strong>Maya Kahi</strong> <span class="chip">Practitioner</span><br><span style="font-size:11px;color:var(--text-muted);">Awaiting approval · submitted 20 Apr 2026</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">—</div>
+        <button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:12px;">Review</button>
+      </div>
+
+      <div class="access-row">
+        <div><strong>P. Fraser</strong> <span class="chip admin">System admin</span><br><span style="font-size:11px;color:var(--text-muted);">LAQ System Administration</span></div>
+        <div>No delegations. Access scope: <strong>all tenants</strong>.<br><span style="font-size:11px;color:var(--text-muted);">Quarterly access review: due 30 Jun 2026</span></div>
+        <div style="font-size:12px;color:var(--text-muted);">Last used now</div>
+        <button class="btn btn-secondary" style="height:28px;padding:0 10px;font-size:12px;">Inspect</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Export modal -->
+<div class="scrim hidden" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="export-title">
+  <div class="modal">
+    <div class="modal-head" style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <h2 id="export-title" style="font-size:17px;font-weight:800;color:var(--navy);">Export audit log</h2>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Every export is itself a logged audit event.</div>
+      </div>
+      <button class="close-btn" aria-label="Close" onclick="document.getElementById('exportModal').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="fld-big">
+        <label for="x-reason">Reason for export <span style="color:var(--error);">*</span></label>
+        <textarea id="x-reason" class="input" rows="3" placeholder="e.g. Privacy access request from Sarah Mitchell (request #PA-2026-0042)…"></textarea>
+      </div>
+      <div class="fld-big">
+        <label for="x-format">Format</label>
+        <select id="x-format" style="width:100%;height:36px;border:1px solid var(--border);border-radius:3px;padding:0 10px;font-family:inherit;font-size:13px;">
+          <option>CSV</option>
+          <option>JSON</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="document.getElementById('exportModal').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary">Generate export</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland · System administration console</span>
+    <div>
+      <a href="S03_collection_notice.html">Collection notice &amp; privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

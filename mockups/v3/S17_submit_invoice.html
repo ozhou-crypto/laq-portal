@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<!--
+  S17 — Submit invoice — v3 (LAQ brand-aligned)
+  ================================================
+  Design rationale (~200 words):
+
+  Layout: LWR Two-Column (main editor + sticky scope summary rail). The whole
+  screen is driven by an OmniScript; the line items editor and the scope
+  summary are each OmniStudio FlexCards embedded inside it.
+
+  Brand treatment (v3): white header + navy nav band + white content area.
+  The scope summary rail uses two stacked progress bars — "Billed to date"
+  (sapphire) and "This invoice" (sky / error red when the proposed invoice
+  pushes past remaining scope). Over-scope is surfaced THREE ways:
+    1. An inline error banner at the top of the page (icon + text)
+    2. The invoice total in the line-items footer turns red
+    3. The primary CTA changes label from "Submit invoice" to "Submit with
+       scope warning" and changes variant to destructive red
+  This gives the practitioner an unambiguous warning without blocking
+  submission (LAQ policy allows over-scope with a review flag).
+
+  Other patterns:
+  - Editable data table for line items (task code, description, date, units,
+    rate, computed amount, delete row)
+  - Alternating row stripe for readability
+  - OOtB file upload for attachments
+
+  Accessibility: role="alert" on the warning banner, tabular semantics, focus
+  visible on every interactive cell.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Submit invoice — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --sky: #0085B3;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+    --warning: #8A4500; --warning-bg: #FEF3E2; --warning-border: #F5C06E;
+    --error: #C0392B; --error-bg: #FDECEB; --error-border: #F5BDBA;
+    --success: #1E7E34; --success-bg: #EBF5EB; --success-border: #A3D9A5;
+  }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Public Sans','Source Sans 3',system-ui,-apple-system,'Segoe UI',sans-serif;
+    font-size: 14px; color: var(--text); background: var(--page);
+    -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; min-height: 100vh;
+  }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button { font-family: inherit; }
+  h1 { margin: 0; }
+
+  /* Shell */
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1px; }
+  .icon-btn { background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-muted); padding: 6px 8px; cursor: pointer; display: inline-flex; align-items: center; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--sapphire); color: #fff; font-weight: 700; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .profile-btn { display: flex; align-items: center; gap: 8px; background: none; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 4px 10px; }
+  .profile-btn .chev { color: var(--text-muted); transition: transform 0.15s; flex-shrink: 0; }
+  .profile-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .profile-wrap { position: relative; }
+  .profile-menu {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    background: #fff; border: 1px solid var(--border); border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+    min-width: 240px; z-index: 200; padding: 6px 0; display: none;
+  }
+  .profile-menu.open { display: block; }
+  .profile-menu .pm-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border-light); display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+  .profile-menu .pm-name { font-size: 13px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .profile-menu .pm-firm { font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px; }
+  .profile-menu a, .profile-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 14px; text-align: left; background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .profile-menu a:hover, .profile-menu button:hover { background: var(--surface); }
+  .profile-menu a svg, .profile-menu button svg { color: var(--text-muted); flex-shrink: 0; }
+  .profile-menu .pm-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+  .profile-menu .pm-signout { color: #C0392B; font-weight: 600; }
+  .profile-menu .pm-signout svg { color: #C0392B; }
+  .profile-menu .pm-signout:hover { background: #FDECEB; }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; text-decoration: none; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+  .nav-item:hover { color: #fff; }
+
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .annot.ootb { background: #E6F4EA; color: #1E7E34; }
+  .annot.flexcard { background: #F0E6FF; color: #6B21A8; }
+  .annot.omniscript { background: #FFF0F0; color: #9B1C1C; }
+
+  /* Annotation toggle */
+  .annot-toggle {
+    background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px;
+    color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 3px 8px; cursor: pointer;
+    letter-spacing: 0.03em; font-family: inherit;
+  }
+  .annot-toggle[aria-pressed="false"] {
+    background: transparent; border-color: var(--border); color: var(--text-muted);
+  }
+  body.annot-off .annot { display: none !important; }
+
+  main { flex: 1; }
+  .page-wrap { max-width: 1300px; margin: 0 auto; padding: 24px; position: relative; }
+
+  .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .crumb { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; display: flex; gap: 6px; align-items: center; }
+  .crumb a { color: var(--sapphire); text-decoration: underline; }
+  .page-head h1 { font-size: 20px; font-weight: 800; color: var(--navy); }
+  .head-actions { display: flex; gap: 8px; align-items: center; }
+
+  .btn { height: 36px; padding: 0 16px; border-radius: 3px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-destructive { background: var(--error); color: #fff; border: 1px solid var(--error); font-weight: 700; }
+  .btn.sm { height: 28px; padding: 0 10px; font-size: 12px; }
+  .btn-ghost { background: transparent; color: var(--sapphire); border: none; font-weight: 400; padding: 0 6px; height: 30px; font-size: 12px; }
+
+  /* Over-scope banner */
+  .alert-error {
+    background: var(--error-bg); border: 1px solid var(--error-border);
+    border-radius: 4px; padding: 12px 16px; margin-bottom: 16px;
+    font-size: 13px; color: var(--error); display: flex; gap: 10px; align-items: flex-start;
+  }
+  .alert-error svg { flex-shrink: 0; margin-top: 1px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 16px; }
+  .card-head { padding: 11px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #FAFBFC; }
+  .card-title { font-size: 13px; font-weight: 700; }
+  .card-body { padding: 16px; }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; }
+  .lt { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .lt thead tr { background: var(--surface); border-bottom: 1px solid var(--border-light); }
+  .lt th { padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+  .lt tbody tr { border-bottom: 1px solid var(--border-light); }
+  .lt tbody tr:nth-child(even) { background: var(--surface); }
+  .lt td { padding: 6px 12px; }
+  .cell-input {
+    width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 3px;
+    padding: 0 8px; font-size: 12px; color: var(--text); outline: none; background: #fff;
+    font-family: inherit;
+  }
+  .cell-input:focus { border-color: var(--sapphire); box-shadow: 0 0 0 2px var(--info-bg); }
+  .row-del { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; font-size: 16px; line-height: 1; }
+  .tbl-footer { padding: 10px 16px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; }
+  .tbl-total { font-size: 13px; font-weight: 700; }
+  .tbl-total .val.err { color: var(--error); }
+  .tbl-total .val.ok { color: var(--navy); }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 3px;
+    padding: 18px; text-align: center; background: var(--surface);
+    cursor: pointer; margin-bottom: 10px;
+  }
+  .dropzone .dim { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .file-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+    padding: 8px 12px;
+  }
+  .file-name { flex: 1; font-size: 13px; }
+  .file-status { font-size: 11px; color: var(--success); font-weight: 600; }
+
+  /* Scope rail */
+  .rail-wrap { position: sticky; top: 16px; }
+  .scope-meta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .scope-meta > div > .lbl { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+  .scope-meta > div > .val { font-size: 13px; }
+  .mono { font-family: 'SFMono-Regular', Consolas, monospace; }
+  .bar-block { margin-bottom: 10px; }
+  .bar-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .bar-row .v { font-weight: 600; color: var(--text); }
+  .bar-row .v.err { color: var(--error); }
+  .bar-track { height: 5px; background: var(--border-light); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .remain-row {
+    border-top: 1px solid var(--border-light); padding-top: 10px;
+    display: flex; justify-content: space-between; font-size: 12px; font-weight: 700;
+    color: var(--error);
+  }
+
+  .site-footer { background: var(--navy); flex-shrink: 0; margin-top: 24px; }
+  .footer-inner { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.85); font-size: 12px; }
+  .footer-inner a { color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; margin-left: 20px; }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .rail-wrap { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="logo-tile">L</div>
+      <div>
+        <div class="brand-name">Legal Aid Queensland</div>
+        <div class="brand-sub">Practitioner Portal</div>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+      <button class="icon-btn" aria-label="Notifications"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+            <div class="profile-wrap">
+        <button class="profile-btn" id="profileBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">
+          <span class="avatar">JH</span>
+          <span style="font-size:12px;font-weight:700;text-align:left;line-height:1.2;">J. Halloran</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="profile-menu" id="profileMenu" role="menu" aria-labelledby="profileBtn">
+          <div class="pm-head">
+            <span class="avatar">JH</span>
+            <div>
+              <div class="pm-name">James Halloran</div>
+              <div class="pm-firm">Halloran &amp; Associates · Brisbane CBD</div>
+            </div>
+          </div>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            My profile
+          </a>
+          <a href="S19_practice_details.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+            Practice details
+          </a>
+          <a href="S20_user_management.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            User &amp; licence management
+          </a>
+          <div class="pm-divider"></div>
+          <a class="pm-signout" href="S01_signin_mfa.html" role="menuitem">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-band" aria-label="Site navigation">
+  <div class="nav-inner">
+    <a class="nav-item" href="S04_dashboard.html">Home</a>
+    <a class="nav-item" href="S10_my_files.html">My files</a>
+    <a class="nav-item" href="S07_draft_applications.html">Applications</a>
+    <a class="nav-item" href="S18_invoice_list.html" aria-current="page">Invoices</a>
+    <a class="nav-item" href="S12_correspondence.html">Correspondence</a>
+    <a class="nav-item" href="S19_practice_details.html">Profile</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-wrap">
+
+    <div class="page-head">
+      <div>
+        <div class="crumb">
+          <a href="#">Q-2024-001847</a>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Submit invoice</span>
+        </div>
+        <h1>Submit invoice — Sarah Mitchell</h1>
+      </div>
+      <div class="head-actions">
+        <span class="annot omniscript">📋 OmniStudio: OmniScript</span>
+        <a class="btn btn-secondary" href="S11_file_detail.html">Cancel</a>
+        <button class="btn btn-secondary">Save draft</button>
+        <a class="btn btn-destructive" href="S18_invoice_list.html">Submit with scope warning</a>
+      </div>
+    </div>
+
+    <div class="alert-error" role="alert">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div><strong>Scope exceeded:</strong> This invoice (AUD 2,340.00) exceeds the remaining scope (AUD 1,850.00). LAQ will review the excess on receipt.</div>
+    </div>
+
+    <div class="grid">
+
+      <div>
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Line items</span>
+            <span class="annot flexcard">🃏 OmniStudio: FlexCard (editable lines)</span>
+          </div>
+          <div class="tbl-wrap">
+            <table class="lt">
+              <thead>
+                <tr>
+                  <th>Task code</th>
+                  <th>Description</th>
+                  <th>Date</th>
+                  <th>Units (hrs)</th>
+                  <th>Rate (AUD)</th>
+                  <th>Amount</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><select class="cell-input"><option>FL01</option><option>FL02</option><option>FL03</option><option>CL01</option><option>DIS</option></select></td>
+                  <td><input class="cell-input" value="Review application and advise client" /></td>
+                  <td><input class="cell-input" value="14 Apr 2026" /></td>
+                  <td><input class="cell-input" type="number" value="2" /></td>
+                  <td><input class="cell-input" type="number" value="195" /></td>
+                  <td style="font-weight:600;white-space:nowrap;">AUD 390.00</td>
+                  <td><button class="row-del" aria-label="Remove row">×</button></td>
+                </tr>
+                <tr>
+                  <td><select class="cell-input"><option>FL03</option><option>FL01</option><option>FL02</option><option>CL01</option><option>DIS</option></select></td>
+                  <td><input class="cell-input" value="Prepare affidavit and court filing" /></td>
+                  <td><input class="cell-input" value="16 Apr 2026" /></td>
+                  <td><input class="cell-input" type="number" value="4" /></td>
+                  <td><input class="cell-input" type="number" value="195" /></td>
+                  <td style="font-weight:600;white-space:nowrap;">AUD 780.00</td>
+                  <td><button class="row-del" aria-label="Remove row">×</button></td>
+                </tr>
+                <tr>
+                  <td><select class="cell-input"><option>FL01</option><option>FL02</option><option>FL03</option><option>CL01</option><option>DIS</option></select></td>
+                  <td><input class="cell-input" value="Interim hearing preparation" /></td>
+                  <td><input class="cell-input" value="20 Apr 2026" /></td>
+                  <td><input class="cell-input" type="number" value="6" /></td>
+                  <td><input class="cell-input" type="number" value="195" /></td>
+                  <td style="font-weight:600;white-space:nowrap;">AUD 1,170.00</td>
+                  <td><button class="row-del" aria-label="Remove row">×</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="tbl-footer">
+            <button class="btn-ghost">+ Add line item</button>
+            <div class="tbl-total">Total: <span class="val err">AUD 2,340.00</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Attachments</span>
+            <span class="annot ootb">⚡ OOtB: lightning-file-upload</span>
+          </div>
+          <div class="card-body">
+            <div class="dropzone">
+              <div>Drop files here or <span style="color:var(--sapphire);font-weight:600;">browse</span></div>
+              <div class="dim">PDF, DOCX — max 20 MB each</div>
+            </div>
+            <div class="file-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sapphire)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="file-name">Timesheet_Apr2026.pdf</span>
+              <span class="file-status">✓ Uploaded</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="rail-wrap">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Scope summary</span>
+            <span class="annot flexcard">🃏 FlexCard</span>
+          </div>
+          <div class="card-body">
+            <div class="scope-meta">
+              <div><div class="lbl">Q-number</div><div class="val mono">Q-2024-001847</div></div>
+              <div><div class="lbl">Client</div><div class="val">Sarah Mitchell</div></div>
+              <div><div class="lbl">Approved scope</div><div class="val">AUD 4,200.00</div></div>
+              <div><div class="lbl">Approved rate</div><div class="val">AUD 195.00/hr</div></div>
+            </div>
+
+            <div class="bar-block">
+              <div class="bar-row"><span>Billed to date</span><span class="v">AUD 2,350.00</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:56%;background:var(--sapphire);"></div></div>
+            </div>
+
+            <div class="bar-block">
+              <div class="bar-row"><span>This invoice</span><span class="v err">AUD 2,340.00</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:56%;background:var(--error);"></div></div>
+            </div>
+
+            <div class="remain-row">
+              <span>Remaining after invoice</span>
+              <span>−AUD 490.00</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>© 2026 Legal Aid Queensland. All rights reserved.</span>
+    <div>
+      <a href="#">Collection notice & privacy</a>
+      <a href="#">Accessibility</a>
+      <a href="#">Contact LAQ</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('profileBtn');
+    var menu = document.getElementById('profileMenu');
+    if (!btn || !menu) return;
+    function setOpen(open) {
+      btn.setAttribute('aria-expanded', String(open));
+      menu.classList.toggle('open', open);
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(btn.getAttribute('aria-expanded') !== 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!menu.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+</script>
+</body>
+</html>

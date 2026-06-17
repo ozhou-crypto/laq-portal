@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<!--
+  S03 — Collection Notice & Privacy Statement — v3
+  ===================================================
+  Design rationale (~200 words):
+
+  This screen has two forms:
+  - As a **blocking modal** on first login, over a dimmed Home dashboard.
+  - As a **standalone page** at /privacy, accessible from every footer.
+
+  The mockup shows the modal on top of a faded dashboard so the blocking
+  behaviour is visible at a glance. Layout: a centred card (max 760px) with
+  a 4px navy top stripe, scrollable body, sticky action bar.
+
+  Content structure follows the brief: plain-English summary ABOVE the full
+  legal notice, version + last-updated stamp visible at the top, "I
+  acknowledge" primary + "Print / download PDF" secondary at the bottom.
+
+  After acknowledgement this same content is available as a standalone page;
+  the footer link "Collection notice & privacy statement" is already wired
+  from every screen. This single file serves both forms — in the standalone
+  variant, the Experience Builder page hides the scrim and action row.
+
+  OOTB components: the page chrome is the OOTB site header + footer + nav.
+  The modal itself is an HTML Editor (rich text) with a Flow launching the
+  acknowledgement. The "Print / download PDF" action is OOTB Document
+  Generation (PSS).
+
+  Accessibility: role="dialog", focus trap, aria-modal, visible focus,
+  keyboard dismiss disabled (user must acknowledge). Body content is plain
+  Australian English.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Collection notice & privacy statement — LAQ Practitioner Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #05325F; --sapphire: #09549F; --teal: #0F8291;
+    --text: #1A1A1A; --text-muted: #5A6472; --text-light: #8A949F;
+    --border: #D0D7DE; --border-light: #E8ECF0;
+    --page: #FFFFFF; --surface: #F5F7FA;
+    --info-bg: #EBF4FF; --info-border: #A8CBF5;
+  }
+  html, body { min-height: 100%; }
+  body { font-family: 'Source Sans Pro','Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif; font-size: 14px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+  :focus-visible { outline: 2px solid var(--sapphire); outline-offset: 2px; }
+  button, a { font-family: inherit; }
+  h1,h2,h3 { margin: 0; }
+
+  /* Shell (dimmed behind modal) */
+  .shell-dim { filter: blur(1.5px); opacity: 0.6; pointer-events: none; user-select: none; flex: 1; display: flex; flex-direction: column; }
+  .site-header { background: #fff; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .header-inner { display: flex; align-items: center; height: 64px; padding: 0 24px; gap: 16px; max-width: 1400px; margin: 0 auto; }
+  .logo-tile { width: 44px; height: 44px; background: var(--navy); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 22px; }
+  .brand-name { color: var(--navy); font-weight: 800; font-size: 16px; line-height: 1.15; }
+  .brand-sub { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1px; }
+  .nav-band { background: var(--navy); flex-shrink: 0; }
+  .nav-inner { display: flex; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+  .nav-item { padding: 11px 16px; background: none; border: none; border-bottom: 3px solid transparent; color: rgba(255,255,255,0.78); font-size: 13px; font-family: inherit; }
+  .nav-item[aria-current="page"] { background: rgba(255,255,255,0.15); border-bottom-color: #fff; color: #fff; font-weight: 700; }
+
+  main.shell-main { flex: 1; padding: 40px 24px; max-width: 1400px; margin: 0 auto; }
+  .placeholder-block { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; height: 200px; margin-bottom: 16px; }
+
+  /* Modal scrim */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(5,31,58,0.55);
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px 16px; z-index: 1000;
+  }
+  .modal {
+    background: #fff; width: 100%; max-width: 760px; max-height: calc(100vh - 64px);
+    border-radius: 4px; box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .modal-stripe { background: var(--navy); height: 4px; }
+  .modal-head { padding: 20px 28px 14px; border-bottom: 1px solid var(--border-light); }
+  .modal-head h1 { font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+  .version-row { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+  .version-row strong { color: var(--text); font-weight: 600; }
+
+  .modal-body { flex: 1; overflow-y: auto; padding: 20px 28px 24px; }
+  .summary-card {
+    background: var(--info-bg); border: 1px solid var(--info-border); border-radius: 4px;
+    padding: 16px 18px; margin-bottom: 20px;
+  }
+  .summary-card h2 { font-size: 13px; color: var(--sapphire); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .summary-card ul { margin: 0; padding-left: 20px; font-size: 14px; color: var(--text); line-height: 1.65; }
+  .summary-card li { margin-bottom: 4px; }
+
+  .full-notice h2 { font-size: 14px; font-weight: 800; color: var(--navy); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .full-notice h3 { font-size: 15px; font-weight: 700; color: var(--navy); margin: 18px 0 6px; }
+  .full-notice p, .full-notice li { font-size: 14px; color: var(--text); line-height: 1.7; }
+  .full-notice p { margin-bottom: 10px; }
+  .full-notice ul { margin: 6px 0 12px 20px; }
+
+  .modal-foot {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 16px 28px; border-top: 1px solid var(--border-light); background: #FAFBFC;
+    flex-wrap: wrap;
+  }
+  .btn { height: 40px; padding: 0 18px; border-radius: 3px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: var(--sapphire); color: #fff; border: 1px solid var(--sapphire); font-weight: 700; }
+  .btn-primary:hover { background: #073F7A; }
+  .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .annot { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; background: #E6F4EA; color: #1E7E34; }
+  body.annot-off .annot { display: none !important; }
+
+  /* Annotation toggle */
+  .annot-toggle { position: fixed; top: 16px; right: 16px; z-index: 1100; background: var(--info-bg); border: 1px solid var(--sapphire); border-radius: 3px; color: var(--sapphire); font-size: 10px; font-weight: 700; padding: 4px 9px; cursor: pointer; letter-spacing: 0.03em; font-family: inherit; }
+  .annot-toggle[aria-pressed="false"] { background: transparent; border-color: var(--border); color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<button class="annot-toggle" id="annotToggle" aria-pressed="true" type="button">⚡ Annotations ON</button>
+
+<div class="shell-dim" aria-hidden="true">
+  <header class="site-header"><div class="header-inner">
+    <div class="logo-tile">L</div>
+    <div><div class="brand-name">Legal Aid Queensland</div><div class="brand-sub">Practitioner Portal</div></div>
+  </div></header>
+  <nav class="nav-band"><div class="nav-inner">
+    <button class="nav-item" aria-current="page">Home</button>
+    <button class="nav-item">My files</button>
+    <button class="nav-item">Applications</button>
+    <button class="nav-item">Invoices</button>
+    <button class="nav-item">Correspondence</button>
+    <button class="nav-item">Profile</button>
+  </div></nav>
+  <main class="shell-main">
+    <div class="placeholder-block"></div>
+    <div class="placeholder-block"></div>
+  </main>
+</div>
+
+<div class="scrim" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <div class="modal-stripe"></div>
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <h1 id="modal-title">Collection notice and privacy statement</h1>
+        <span class="annot">⚡ OOtB: HTML Editor + Flow</span>
+      </div>
+      <div class="version-row">
+        <span>Version <strong>3.2</strong></span>
+        <span>·</span>
+        <span>Last updated <strong>02 Apr 2026</strong></span>
+        <span>·</span>
+        <span>Effective from <strong>15 Apr 2026</strong></span>
+      </div>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="summary-card" aria-labelledby="summary-h">
+        <h2 id="summary-h">Plain-English summary</h2>
+        <ul>
+          <li>We collect information from you to administer legal aid grants on behalf of your clients.</li>
+          <li>We share information with LAQ grants officers, your firm, and with courts where required.</li>
+          <li>You can ask to see or correct any personal information we hold about you.</li>
+          <li>We keep records for seven years after a file is closed, then securely destroy them.</li>
+          <li>You must acknowledge this notice to use the Practitioner Portal.</li>
+        </ul>
+      </div>
+
+      <div class="full-notice">
+        <h2>Full notice</h2>
+
+        <h3>1. Who collects this information</h3>
+        <p>Legal Aid Queensland (LAQ) is the collecting agency. LAQ is an independent statutory body established under the <em>Legal Aid Queensland Act 1997</em>.</p>
+
+        <h3>2. What we collect</h3>
+        <p>We collect information about you in your capacity as a legal practitioner, including:</p>
+        <ul>
+          <li>Your name, firm, position, contact details, ABN and bank account details for payment of grants.</li>
+          <li>Your professional registration and admission details.</li>
+          <li>Information about grants of aid you manage, including matter type, scope, invoices, outcomes and correspondence.</li>
+          <li>Records of your access to the portal, for security and compliance purposes.</li>
+        </ul>
+
+        <h3>3. Why we collect it</h3>
+        <p>We collect this information to administer the legal aid scheme under the <em>Legal Aid Queensland Act 1997</em> and associated guidelines, including assessing applications, managing grants, paying practitioners and monitoring outcomes.</p>
+
+        <h3>4. Who we share it with</h3>
+        <ul>
+          <li>LAQ grants officers and other LAQ staff for the administration of grants.</li>
+          <li>Your firm's authorised administrators, where delegated access has been configured.</li>
+          <li>Courts, tribunals and other agencies where required by law or with your consent.</li>
+          <li>Auditors and the Queensland Audit Office for compliance purposes.</li>
+        </ul>
+
+        <h3>5. Your rights</h3>
+        <p>You may request access to, or correction of, personal information that LAQ holds about you. Contact LAQ's Privacy Officer at <a href="mailto:privacy@legalaid.qld.gov.au">privacy@legalaid.qld.gov.au</a>.</p>
+
+        <h3>6. Retention</h3>
+        <p>Records are retained for seven years after a file is closed, in line with Queensland State Archives' General Retention and Disposal Schedule. After that period, records are securely destroyed.</p>
+
+        <h3>7. Security</h3>
+        <p>Information held in the Practitioner Portal is protected by Salesforce-platform security controls, including access controls, encryption in transit and at rest, and audit logging. Access is reviewed quarterly.</p>
+
+        <h3>8. Acknowledgement</h3>
+        <p>By selecting "I acknowledge" you confirm that you have read and understood this notice.</p>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-secondary">Print / download PDF <span class="annot" style="margin-left:6px;">⚡ OOtB: Document Generation</span></button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="annot">⚡ OOtB: Flow (acknowledgement)</span>
+        <a class="btn btn-primary" href="S04_dashboard.html">I acknowledge</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById('annotToggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var on = btn.getAttribute('aria-pressed') !== 'false';
+      var next = !on;
+      btn.setAttribute('aria-pressed', String(next));
+      btn.textContent = next ? '⚡ Annotations ON' : '⚡ Annotations OFF';
+      document.body.classList.toggle('annot-off', !next);
+    });
+  })();
+</script>
+</body>
+</html>
