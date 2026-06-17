@@ -378,7 +378,7 @@
   <a href="#notice-title" class="skip-link">Skip to main content</a>
 
 <!-- ── Blurred portal background ──────────────────────────────── -->
-<div class="portal-bg" aria-hidden="true" data-annotation='{"type":"OOTB","name":"Experience Cloud Login","effort":"S","note":"Portal chrome visible beneath modal overlay"}'>
+<div class="portal-bg" aria-hidden="true">
   <div class="bg-accent-strip"></div>
   <div class="bg-header">
     <div class="bg-header__logo"></div>
@@ -417,10 +417,10 @@
   aria-modal="true"
   aria-labelledby="notice-title"
   aria-describedby="notice-summary-text"
-  data-annotation='{"type":"Custom","name":"LWC: CollectionNoticeModal","effort":"M","note":"Blocking first-run modal — intercepts navigation until acknowledged"}'
+ 
 >
 
-  <div class="modal" data-annotation='{"type":"Custom","name":"LWC: CollectionNoticeModal","effort":"M","note":"Modal with sticky header, scrollable body, sticky footer"}'>
+  <div class="modal">
 
     <!-- Modal header -->
     <header class="modal__header">
@@ -434,7 +434,7 @@
     <div class="modal__body" tabindex="0" aria-label="Notice content — scroll to read">
 
       <!-- Plain English summary -->
-      <div class="notice-summary" role="region" aria-label="Plain English summary" data-annotation='{"type":"OOTB","name":"CMS Content","effort":"S","note":"Plain-language summary authored in Experience Cloud CMS"}'>
+      <div class="notice-summary" role="region" aria-label="Plain English summary">
         <div class="notice-summary__label">Summary in plain English</div>
         <p class="notice-summary__text" id="notice-summary-text">
           Legal Aid Queensland (LAQ) collects personal and practice information about you through
@@ -449,7 +449,7 @@
       <!-- Full notice -->
       <div class="notice-divider">Full collection notice</div>
 
-      <section class="notice-section" aria-labelledby="section-purpose" data-annotation='{"type":"OOTB","name":"CMS Content","effort":"S","note":"Full collection notice text managed in CMS — version-stamped"}'>
+      <section class="notice-section" aria-labelledby="section-purpose">
         <h2 class="notice-section__heading" id="section-purpose">1. Purpose of collection</h2>
         <p class="notice-section__body">
           Legal Aid Queensland ABN 49 846 898 098 collects personal information through this
@@ -535,7 +535,7 @@
     </div><!-- /.modal__body -->
 
     <!-- Modal footer — sticky -->
-    <footer class="modal__footer" data-annotation='{"type":"Custom","name":"LWC: CollectionNoticeModal","effort":"M","note":"Acknowledgement capture writes to ContactConsent__c"}'>
+    <footer class="modal__footer">
       <button class="btn-primary" type="button">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <polyline points="1.5,6 4.5,9 10.5,3" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
@@ -582,7 +582,6 @@
   });
 }());
 </script>
-<script src="annotations.js"></script>
 <script src="password.js"></script>
 </body>
 </html>

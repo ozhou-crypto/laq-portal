@@ -316,7 +316,7 @@
   <main id="main-content" class="page-container">
 
     <!-- Breadcrumb -->
-    <nav class="breadcrumb" aria-label="Breadcrumb" data-annotation='{"type":"OOTB","name":"Breadcrumbs","effort":"S","note":"Standard Breadcrumbs component"}'>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="S04_dashboard.html">Home</a>
       <span class="breadcrumb-sep" aria-hidden="true">&#8250;</span>
       <span aria-current="page">Manage Availability</span>
@@ -335,7 +335,7 @@
     </div>
 
     <!-- Page heading + status badge -->
-    <div data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"Heading with derived overall Availability Status badge (AC4)"}'>
+    <div>
       <div class="page-heading-row">
         <h1>Manage Availability</h1>
         <span class="status-badge status-badge--available" id="overall-status-badge">Available</span>
@@ -344,7 +344,7 @@
     </div>
 
     <!-- Panel availability card -->
-    <div class="card" data-annotation='{"type":"Custom","name":"LWC — Panel Availability Button Group Table","effort":"M","note":"Custom LWC using lightning-button-group (Yes/No pill segmented control) per panel row. The OOTB button-group component handles toggle state and aria-pressed; the custom LWC wraps it in a table layout for bulk editing across multiple area-of-law + office combinations."}'>
+    <div class="card">
       <div class="card-body">
         <h2 class="card-heading">Panel availability</h2>
         <table class="panel-table" aria-label="Panel availability toggles">
@@ -434,7 +434,7 @@
     </div>
 
     <!-- Status history card -->
-    <div class="card" data-annotation='{"type":"OOTB","name":"Related List","effort":"S","note":"Read-only related list showing status change audit log (AC5)"}'>
+    <div class="card">
       <div class="card-body">
         <h2 class="card-heading">Status history</h2>
         <table class="history-table" aria-label="Availability status change history">
@@ -549,7 +549,6 @@
   })();
   </script>
 
-  <script src="annotations.js"></script>
 <script src="password.js"></script>
 </body>
 </html>

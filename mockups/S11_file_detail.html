@@ -529,7 +529,7 @@
       </button>
     </div>
   </header>
-  <nav class="primary-nav" aria-label="Primary navigation" data-annotation='{"type":"OOTB","name":"Navigation Menu","effort":"S","note":"Standard Experience Cloud top navigation with active state on Grant of Aid"}'>
+  <nav class="primary-nav" aria-label="Primary navigation">
     <a href="S04_dashboard.html">Home</a>
     <a href="S07_draft_applications.html">Applications</a>
     <a href="S10_my_files.html" class="active" aria-current="page">Grant of Aid</a>
@@ -541,7 +541,7 @@
   <main id="main-content">
 
     <!-- OOTB: Breadcrumbs -->
-    <nav class="breadcrumb" aria-label="Breadcrumb" data-annotation='{"type":"OOTB","name":"Breadcrumbs","effort":"S","note":"Standard breadcrumb component — Home > My files > record"}'>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="S04_dashboard.html">Home</a>
       <span class="breadcrumb__sep" aria-hidden="true">›</span>
       <a href="S10_my_files.html">My files</a>
@@ -550,7 +550,7 @@
     </nav>
 
     <!-- OOTB: Record Detail — Highlights Panel -->
-    <div class="highlights-panel" role="region" aria-label="Grant file highlights" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"Highlights panel on GrantFile__c — 6 key fields"}'>
+    <div class="highlights-panel" role="region" aria-label="Grant file highlights">
       <div class="highlights-avatar" aria-hidden="true">MT</div>
       <div class="highlights-body">
         <h1 class="highlights-name">Maria Tran</h1>
@@ -569,7 +569,7 @@
     </div>
 
     <!-- OOTB: Record Actions -->
-    <div class="record-actions-bar" role="region" aria-label="File actions" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"Record Actions bar — standard quick action buttons"}'>
+    <div class="record-actions-bar" role="region" aria-label="File actions">
       <button class="btn btn--primary" type="button">Request extension</button>
       <button class="btn btn--neutral" type="button">Submit invoice</button>
       <button class="btn btn--neutral" type="button">Upload document</button>
@@ -578,7 +578,7 @@
 
     <!-- OOTB: Record Detail — Tabs -->
     <!-- A11Y: Production LWC must implement arrow-key navigation between tabs per ARIA tabs pattern -->
-    <div class="slds-tabs" role="tablist" aria-label="File sections" data-annotation='{"type":"OOTB","name":"Tabs","effort":"S","note":"Standard Tabs component wrapping tab panels"}'>
+    <div class="slds-tabs" role="tablist" aria-label="File sections">
       <a href="#" class="slds-tabs__item is-active" role="tab" aria-selected="true" tabindex="0" id="tab-summary" aria-controls="panel-summary">Summary</a>
       <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1" id="tab-correspondence" aria-controls="panel-correspondence">Correspondence (3)</a>
       <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1" id="tab-documents" aria-controls="panel-documents">Documents (7)</a>
@@ -594,7 +594,7 @@
       <div>
 
         <!-- OOTB: Record Form — Scope and commitment + Custom: LWC:ScopeBar -->
-        <div class="slds-card" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"Scope and conditions fields from GrantFile__c"}'>
+        <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Scope and commitment</h2>
           </div>
@@ -618,7 +618,7 @@
               </div>
             </div>
             <!-- Custom: LWC:ScopeBar -->
-            <div class="scope-bar-wrap" role="img" aria-label="Scope utilisation: 72% used ($3,240 of $4,500)" data-annotation='{"type":"Custom","name":"LWC: ScopeBar","effort":"S","note":"Visual scope-remaining progress bar — no OOTB equivalent in Record Detail"}'>
+            <div class="scope-bar-wrap" role="img" aria-label="Scope utilisation: 72% used ($3,240 of $4,500)">
               <div class="scope-bar-track">
                 <div class="scope-bar-fill"></div>
               </div>
@@ -631,7 +631,7 @@
         </div>
 
         <!-- OOTB: Related List — Grant conditions -->
-        <div class="slds-card" data-annotation='{"type":"OOTB","name":"Related List","effort":"S","note":"Related list of GrantCondition__c records on GrantFile__c"}'>
+        <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Grant conditions</h2>
             <a href="#" class="slds-card__header-link">View all</a>
@@ -667,7 +667,7 @@
         </div>
 
         <!-- OOTB: Record Form — Key dates -->
-        <div class="slds-card" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"Key dates section — formula fields on GrantFile__c"}'>
+        <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Key dates</h2>
           </div>
@@ -701,7 +701,7 @@
         </div>
 
         <!-- OOTB: Record Form — Assigned LAQ contact -->
-        <div class="slds-card" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"LAQ assigned officer lookup fields"}'>
+        <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Assigned LAQ contact</h2>
           </div>
@@ -726,7 +726,7 @@
       <div>
 
         <!-- OOTB: Related List — Decision letters -->
-        <div class="slds-card" data-annotation='{"type":"OOTB","name":"Related List","effort":"S","note":"Related list of DecisionLetter__c records — most recent first"}'>
+        <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Decision letters</h2>
             <a href="#" class="slds-card__header-link">View all</a>
@@ -762,7 +762,7 @@
         </div>
 
         <!-- OOTB: Related List — Assigned parties -->
-        <div class="slds-card" data-annotation='{"type":"OOTB","name":"Related List","effort":"S","note":"Related list of AssignedParty__c junction records"}'>
+        <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Assigned parties</h2>
             <a href="#" class="slds-card__header-link">View all</a>
@@ -795,7 +795,7 @@
         </div>
 
         <!-- OOTB: Related List — Recent notifications -->
-        <div class="slds-card" data-annotation='{"type":"OOTB","name":"Related List","effort":"S","note":"Related list of recent Notification__c records"}'>
+        <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Recent notifications</h2>
             <a href="#" class="slds-card__header-link">View all</a>
@@ -853,7 +853,6 @@
     </div>
   </footer>
 
-  <script src="annotations.js"></script>
 <script src="password.js"></script>
 </body>
 </html>

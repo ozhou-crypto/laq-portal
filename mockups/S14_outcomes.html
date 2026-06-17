@@ -203,14 +203,14 @@
   </nav>
 
   <main class="main" id="main-content">
-    <nav class="breadcrumb-bar" aria-label="Breadcrumb" data-annotation='{"type":"OOTB","name":"Breadcrumbs","effort":"S","note":"Standard Breadcrumbs component"}'><a href="#">My Files</a><span class="bc-sep" aria-hidden="true">›</span><a href="#">Q-2024-003847 — Maria Tran</a><span class="bc-sep" aria-hidden="true">›</span><span aria-current="page">Outcomes</span></nav>
+    <nav class="breadcrumb-bar" aria-label="Breadcrumb"><a href="#">My Files</a><span class="bc-sep" aria-hidden="true">›</span><a href="#">Q-2024-003847 — Maria Tran</a><span class="bc-sep" aria-hidden="true">›</span><span aria-current="page">Outcomes</span></nav>
 
-    <div class="highlights" role="region" aria-label="File highlights" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"File context highlights from GrantFile__c"}'>
+    <div class="highlights" role="region" aria-label="File highlights">
       <div class="hl-row1"><div class="hl-avatar" aria-hidden="true">MT</div><div class="hl-title"><div class="hl-name">Maria Tran</div><div class="hl-sub">Q-2024-003847 · Family law — parenting</div></div><div class="hl-status" role="status" aria-label="File status: Active"><span class="hl-status-dot" aria-hidden="true"></span>Active</div></div>
       <div class="hl-fields"><div class="hl-field"><span class="hl-field-label">Q-number</span><span class="hl-field-value">Q-2024-003847</span></div><div class="hl-field"><span class="hl-field-label">Matter type</span><span class="hl-field-value">Family — parenting</span></div><div class="hl-field"><span class="hl-field-label">Practitioner</span><span class="hl-field-value">Sarah Chen</span></div><div class="hl-field"><span class="hl-field-label">LAQ contact</span><span class="hl-field-value">Emma Watkins</span></div><div class="hl-field"><span class="hl-field-label">Scope expiry</span><span class="hl-field-value">30 Jun 2026</span></div></div>
     </div>
 
-    <div class="tabs-row" role="tablist" aria-label="File detail tabs" data-annotation='{"type":"OOTB","name":"Tabs","effort":"S","note":"Standard Tabs component wrapping tab panels"}'>
+    <div class="tabs-row" role="tablist" aria-label="File detail tabs">
       <button class="tab-btn" role="tab" aria-selected="false">Summary</button>
       <button class="tab-btn" role="tab" aria-selected="false">Correspondence</button>
       <button class="tab-btn" role="tab" aria-selected="false">Documents</button>
@@ -221,7 +221,7 @@
 
     <div class="content" role="tabpanel" id="tab-panel" aria-label="Outcomes">
 
-      <div class="card" data-annotation='{"type":"Custom","name":"LWC: OutcomesTimeline","effort":"M","note":"Visual timeline with edit/lock states per entry — no OOTB list view handles per-row edit windows"}'>
+      <div class="card">
         <div class="card-header"><h2 class="card-title">Outcome history</h2></div>
         <div class="card-body">
           <div class="timeline" role="list" aria-label="Outcome history">
@@ -247,7 +247,7 @@
         </div>
       </div>
 
-      <div class="card" data-annotation='{"type":"OOTB","name":"Record Form","effort":"S","note":"Standard Record Form on Outcome__c — create new outcome record"}'>
+      <div class="card">
         <div class="card-header"><h2 class="card-title">Record outcome</h2></div>
         <div class="card-body">
           <form aria-label="Record a new outcome for Q-2024-003847" novalidate>
@@ -256,9 +256,9 @@
               <div class="form-group"><label class="form-label" for="outcome-date">Date<span class="req" aria-hidden="true">*</span></label><input class="form-input" type="date" id="outcome-date" name="outcome_date" required aria-required="true"></div>
               <div class="form-group full-width"><label class="form-label" for="outcome-court">Court or tribunal <span style="font-weight:400;color:var(--muted)">(if court-related)</span></label><input class="form-input" type="text" id="outcome-court" name="outcome_court" placeholder="e.g. Federal Circuit and Family Court of Australia"></div>
               <div class="form-group full-width"><label class="form-label" for="outcome-notes">Notes</label><textarea class="form-textarea" id="outcome-notes" name="outcome_notes" rows="4" placeholder="Provide any relevant details about the outcome…"></textarea></div>
-              <div class="form-group full-width"><span class="form-label" id="support-doc-label">Supporting document</span><div class="upload-zone-sm" role="region" aria-labelledby="support-doc-label" data-annotation='{"type":"OOTB","name":"File Upload","effort":"S","note":"Standard File Upload component — attach supporting docs to outcome"}'><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 11V5M8 5L5.5 7.5M8 5l2.5 2.5" stroke="#595959" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke="#595959" stroke-width="1.3" stroke-linecap="round"/></svg><span class="upload-zone-sm-text">Drop a file here or <span class="upload-zone-sm-link" role="button" tabindex="0">choose file</span></span></div><span class="form-hint">PDF or DOCX. Maximum 25 MB.</span></div>
+              <div class="form-group full-width"><span class="form-label" id="support-doc-label">Supporting document</span><div class="upload-zone-sm" role="region" aria-labelledby="support-doc-label"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 11V5M8 5L5.5 7.5M8 5l2.5 2.5" stroke="#595959" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke="#595959" stroke-width="1.3" stroke-linecap="round"/></svg><span class="upload-zone-sm-text">Drop a file here or <span class="upload-zone-sm-link" role="button" tabindex="0">choose file</span></span></div><span class="form-hint">PDF or DOCX. Maximum 25 MB.</span></div>
             </div>
-            <div class="btn-row" data-annotation='{"type":"OOTB","name":"Record Form","effort":"S","note":"Record Form save/cancel actions"}'><button class="btn-primary" type="submit">Record outcome</button><button class="btn-neutral" type="button">Cancel</button></div>
+            <div class="btn-row"><button class="btn-primary" type="submit">Record outcome</button><button class="btn-neutral" type="button">Cancel</button></div>
           </form>
         </div>
       </div>
@@ -276,7 +276,6 @@
   <div class="footer-links"><a href="#">Terms of Use</a><a href="#">Privacy Policy</a><a href="#">Accessibility</a></div>
 </footer>
 
-<script src="annotations.js"></script>
 <script src="password.js"></script>
 </body>
 </html>

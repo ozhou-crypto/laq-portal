@@ -264,7 +264,7 @@
   <main class="main" id="main-content">
 
     <!-- Breadcrumbs -->
-    <nav class="breadcrumb-bar" aria-label="Breadcrumb" data-annotation='{"type":"OOTB","name":"Breadcrumbs","effort":"S","note":"Standard Breadcrumbs component"}'>
+    <nav class="breadcrumb-bar" aria-label="Breadcrumb">
       <a href="#">My Files</a>
       <span class="bc-sep" aria-hidden="true">›</span>
       <a href="#">Q-2024-003847 — Maria Tran</a>
@@ -273,7 +273,7 @@
     </nav>
 
     <!-- Highlights band -->
-    <div class="highlights" role="region" aria-label="File highlights" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"File context highlights from GrantFile__c"}'>
+    <div class="highlights" role="region" aria-label="File highlights">
       <div class="hl-row1">
         <div class="hl-avatar" aria-hidden="true">MT</div>
         <div class="hl-title">
@@ -295,7 +295,7 @@
     </div>
 
     <!-- Tabs -->
-    <div class="tabs-row" role="tablist" aria-label="File detail tabs" data-annotation='{"type":"OOTB","name":"Tabs","effort":"S","note":"Standard Tabs component — Documents tab active"}'>
+    <div class="tabs-row" role="tablist" aria-label="File detail tabs">
       <button class="tab-btn" role="tab" aria-selected="false">Summary</button>
       <button class="tab-btn" role="tab" aria-selected="false">Correspondence</button>
       <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-panel">Documents</button>
@@ -308,7 +308,7 @@
     <div class="content" role="tabpanel" id="tab-panel" aria-label="Documents">
 
       <!-- File Upload component -->
-      <div class="card" data-annotation='{"type":"OOTB","name":"File Upload","effort":"S","note":"Standard LWR File Upload component — drag-and-drop, links to GrantFile__c"}'>
+      <div class="card">
         <div class="card-header">
           <h2 class="card-title">Upload documents</h2>
         </div>
@@ -327,7 +327,7 @@
           </div>
 
           <!-- Upload in progress -->
-          <div class="upload-progress-row" role="status" aria-label="Uploading financial-statement-v2.pdf — 60 percent complete" data-annotation='{"type":"OOTB","name":"File Upload","effort":"S","note":"File Upload progress state — built into component"}'>
+          <div class="upload-progress-row" role="status" aria-label="Uploading financial-statement-v2.pdf — 60 percent complete">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M3 2h6.5L13 5.5V14H3V2z" stroke="#595959" stroke-width="1.2" fill="none"/>
               <path d="M9 2v4h4" stroke="#595959" stroke-width="1.2" fill="none"/>
@@ -342,7 +342,7 @@
       </div>
 
       <!-- Related List — Files -->
-      <div class="card" data-annotation='{"type":"OOTB","name":"Related List","effort":"S","note":"Related list of ContentDocument records linked to GrantFile__c"}'>
+      <div class="card">
         <div class="card-header">
           <h2 class="card-title">Documents <span style="font-weight:400;color:var(--muted)">(4)</span></h2>
         </div>
@@ -474,7 +474,6 @@
   <div class="footer-links"><a href="#">Terms of Use</a><a href="#">Privacy Policy</a><a href="#">Accessibility</a></div>
 </footer>
 
-<script src="annotations.js"></script>
 <script src="password.js"></script>
 </body>
 </html>

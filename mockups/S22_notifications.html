@@ -210,8 +210,8 @@
     <div class="two-pane">
 
       <!-- List pane -->
-      <div class="list-pane" role="region" aria-label="Notifications list" data-annotation='{"type":"Custom","name":"LWC: NotificationsCenter","effort":"L","note":"Notification inbox with unread state, grouping, mark-all-read — beyond standard bell component"}'>
-        <div class="list-filter-row" data-annotation='{"type":"Custom","name":"LWC: NotificationsCenter","effort":"L","note":"Filter chips scoped to notification type — no OOTB notification list with per-type filtering"}'>
+      <div class="list-pane" role="region" aria-label="Notifications list">
+        <div class="list-filter-row">
           <div class="filter-chips" role="group" aria-label="Filter notifications">
             <button class="chip active" type="button" aria-pressed="true">All</button>
             <button class="chip" type="button" aria-pressed="false">Unread (3)</button>
@@ -266,7 +266,7 @@
       </div>
 
       <!-- Detail pane -->
-      <div class="detail-pane" role="region" aria-label="Notification detail" aria-live="polite" data-annotation='{"type":"Custom","name":"LWC: NotificationsCenter","effort":"L","note":"Notification detail with linked record context and primary action"}'>
+      <div class="detail-pane" role="region" aria-label="Notification detail" aria-live="polite">
         <h2 class="detail-heading">Decision letter issued</h2>
         <p class="detail-meta"><strong>Q-2024-003847</strong> — Maria Tran<br>Family law — parenting<br>24 Apr 2026 10:02 am</p>
         <p class="detail-body">A decision letter has been issued for Q-2024-003847. The scope extension has been approved.</p>
@@ -279,7 +279,7 @@
     </div>
 
     <!-- ── Notification preferences ── -->
-    <div class="prefs-card" data-annotation='{"type":"Custom","name":"LWC: NotificationPreferences","effort":"M","note":"Preference matrix — event type vs channel toggles; no OOTB equivalent"}'>
+    <div class="prefs-card">
       <div class="prefs-header"><h2 class="prefs-heading">Notification preferences</h2></div>
       <div class="prefs-body">
         <table class="prefs-table" aria-label="Notification channel preferences">
@@ -293,7 +293,7 @@
           </tbody>
         </table>
 
-        <div class="quiet-hours-row" data-annotation='{"type":"Custom","name":"LWC: NotificationPreferences","effort":"M","note":"Quiet hours time-range setting — part of preferences component"}'>
+        <div class="quiet-hours-row">
           <span class="quiet-hours-label">Do not send SMS between</span>
           <label><span class="sr-only">Do not send SMS from</span><input class="time-input" type="time" value="20:00" aria-label="Quiet hours start time"></label>
           <span class="quiet-sep">—</span>
@@ -356,7 +356,6 @@
   }());
   </script>
 
-  <script src="annotations.js"></script>
 <script src="password.js"></script>
 </body>
 </html>

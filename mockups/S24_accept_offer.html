@@ -293,7 +293,7 @@
   <main id="main-content" class="page-container">
 
     <!-- Breadcrumb -->
-    <nav class="breadcrumb" aria-label="Breadcrumb" data-annotation='{"type":"OOTB","name":"Breadcrumbs","effort":"S","note":"Standard Breadcrumbs component"}'>
+    <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="S04_dashboard.html">Home</a>
       <span class="breadcrumb-sep" aria-hidden="true">&#8250;</span>
       <a href="#">Grant of Aid Offers</a>
@@ -302,7 +302,7 @@
     </nav>
 
     <!-- Success banner (hidden by default, shown after acceptance) -->
-    <div class="success-banner" id="success-banner" role="status" aria-live="polite" data-annotation='{"type":"OOTB","name":"Flow","effort":"S","note":"Flow confirmation screen — audit log entry written via Flow action to AuditLog__c"}'>
+    <div class="success-banner" id="success-banner" role="status" aria-live="polite">
       <svg class="success-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle cx="12" cy="12" r="11" fill="#2e844a"/>
         <path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -314,7 +314,7 @@
     </div>
 
     <!-- Highlights panel -->
-    <div class="highlights-panel" data-annotation='{"type":"OOTB","name":"Record Detail","effort":"S","note":"Compact highlights panel on Offer__c — read-only context showing status and offer metadata"}'>
+    <div class="highlights-panel">
       <div class="highlights-top">
         <span class="highlights-client-name">Anh Nguyen</span>
         <span class="status-badge status-badge--new" id="status-badge">New</span>
@@ -329,7 +329,7 @@
     </div>
 
     <!-- Application Summary card -->
-    <div class="card" data-annotation='{"type":"OOTB","name":"Record Form","effort":"S","note":"Record Form component — 2-column read-only layout showing all AC1 application summary fields"}'>
+    <div class="card">
       <div class="card-body">
         <h2 class="card-heading">Application Summary</h2>
         <div class="field-grid">
@@ -374,7 +374,7 @@
     </div>
 
     <!-- Attachments card -->
-    <div class="card" data-annotation='{"type":"OOTB","name":"Related List","effort":"S","note":"Related List — Attachments on Offer__c with view-only access to relevant documents"}'>
+    <div class="card">
       <div class="card-body">
         <h2 class="card-heading">Attachments</h2>
         <table class="attachments-list" aria-label="Attached documents">
@@ -406,7 +406,7 @@
   </main>
 
   <!-- Sticky action bar -->
-  <div class="sticky-footer" id="action-bar" role="region" aria-label="Offer actions" data-annotation='{"type":"OOTB","name":"Flow","effort":"S","note":"Flow navigation footer — decline and accept actions"}'>
+  <div class="sticky-footer" id="action-bar" role="region" aria-label="Offer actions">
     <a href="S16_decline_offer.html" class="btn btn-neutral">Reject offer</a>
     <button class="btn btn-primary" type="button" id="btn-accept">Accept offer</button>
   </div>
@@ -504,7 +504,6 @@
   })();
   </script>
 
-  <script src="annotations.js"></script>
 <script src="password.js"></script>
 </body>
 </html>
