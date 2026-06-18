@@ -24,7 +24,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>S07b — Application Detail — IA-00000003 — LAQ Practitioner Portal</title>
+<title>S07b — Application Detail — IA-0000000446 — LAQ Practitioner Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -688,37 +688,30 @@
           </div>
           <div class="record-header__title-group">
             <div class="record-header__object-label">Individual Application</div>
-            <h1 class="record-header__name">IA-00000003</h1>
+            <h1 class="record-header__name">IA-0000000446</h1>
           </div>
         </div>
         <div class="record-header__actions">
-          <button class="btn btn--neutral" type="button">Withdraw</button>
-          <button class="btn btn--neutral" type="button">Upload document</button>
-          <button class="btn btn--brand" type="button">Submit for approval</button>
-          <button class="btn--icon-bare" type="button" aria-label="More actions">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-          </button>
+          <button class="btn btn--neutral" type="button">Launch Assessment</button>
+          <button class="btn btn--neutral" type="button">Launch Allocation</button>
+          <button class="btn btn--neutral" type="button">Submit for Approval</button>
+          <div style="display:inline-flex;align-items:stretch;gap:0;">
+            <button class="btn btn--neutral" type="button" style="border-right:none;border-radius:0.25rem 0 0 0.25rem;">Clone</button>
+            <button class="btn btn--neutral" type="button" aria-label="More clone actions" style="padding:0 0.5rem;border-left:1px solid #c9c9c9;border-radius:0 0.25rem 0.25rem 0;">
+              <svg width="10" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="#181818" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
         </div>
       </div>
       <!-- Compact layout highlight fields -->
       <div class="compact-fields">
         <div class="compact-field">
           <span class="compact-field__label">Category</span>
-          <span class="compact-field__value">Family law — parenting</span>
+          <span class="compact-field__value">Criminal law problem</span>
         </div>
         <div class="compact-field">
-          <span class="compact-field__label">Application status</span>
-          <span class="compact-field__value">
-            In Review
-          </span>
-        </div>
-        <div class="compact-field">
-          <span class="compact-field__label">Applicant</span>
-          <span class="compact-field__value"><a href="#" class="compact-field__value--link">Priya Sharma</a></span>
-        </div>
-        <div class="compact-field">
-          <span class="compact-field__label">Account</span>
-          <span class="compact-field__value"><a href="#" class="compact-field__value--link">Okafor Legal Pty Ltd</a></span>
+          <span class="compact-field__label">Application Status</span>
+          <span class="compact-field__value">Draft</span>
         </div>
       </div>
     </div>
@@ -729,15 +722,14 @@
          ══════════════════════════════════════════════════ -->
     <div class="path-container" role="region" aria-label="Application status path">
       <div class="path-stages" role="list" aria-label="Application stages">
-        <div class="path-stage path-stage--selected" role="listitem" aria-current="step" aria-label="In Review — selected">In Review</div>
-        <div class="path-stage path-stage--incomplete" role="listitem" aria-label="Submit for Approval — incomplete">Incomplete</div>
-        <div class="path-stage path-stage--incomplete" role="listitem" aria-label="Approved — incomplete">Incomplete</div>
-        <div class="path-stage path-stage--incomplete" role="listitem" aria-label="Complete — incomplete">Incomplete</div>
-        <div class="path-stage path-stage--incomplete" role="listitem" aria-label="Closed — incomplete">Incomplete</div>
+        <div class="path-stage path-stage--selected" role="listitem" aria-current="step" aria-label="Draft — current stage">Draft</div>
+        <div class="path-stage path-stage--incomplete" role="listitem" aria-label="In Review — incomplete">In Review</div>
+        <div class="path-stage path-stage--incomplete" role="listitem" aria-label="Submit for Approval — incomplete">Submit for Approval</div>
+        <div class="path-stage path-stage--incomplete" role="listitem" aria-label="Approved — incomplete">Approved</div>
       </div>
       <button class="path-action-btn" type="button">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-        Mark as Complete
+        Mark Application Status as Complete
       </button>
     </div>
 
@@ -767,10 +759,20 @@
             <div class="record-form">
 
               <div class="record-field">
-                <span class="field-label">Owner</span>
+                <span class="field-label">Owner Name</span>
                 <div class="field-value-row">
-                  <span class="field-value"><a href="#" class="field-value--link">Lucas Okafor</a></span>
-                  <button class="field-edit-btn" aria-label="Edit Owner" type="button">
+                  <span class="field-value"><a href="#" class="field-value--link">Gaurav Jain</a></span>
+                  <button class="field-edit-btn" aria-label="Edit Owner Name" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="record-field">
+                <span class="field-label">Description</span>
+                <div class="field-value-row">
+                  <span class="field-value field-value--muted"></span>
+                  <button class="field-edit-btn" aria-label="Edit Description" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
@@ -779,37 +781,35 @@
               <div class="record-field">
                 <span class="field-label">Application ID</span>
                 <div class="field-value-row">
-                  <span class="field-value">IA-00000003</span>
+                  <span class="field-value">IA-0000000446</span>
                 </div>
               </div>
 
               <div class="record-field">
-                <span class="field-label">Application status</span>
+                <span class="field-label">Application Status</span>
                 <div class="field-value-row">
-                  <span class="field-value">
-                    In Review
-                  </span>
-                  <button class="field-edit-btn" aria-label="Edit Application status" type="button">
+                  <span class="field-value">Draft</span>
+                  <button class="field-edit-btn" aria-label="Edit Application Status" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
               </div>
 
               <div class="record-field">
-                <span class="field-label">Application case</span>
+                <span class="field-label">Application Case</span>
                 <div class="field-value-row">
-                  <span class="field-value"><a href="#" class="field-value--link">Q-2026-004821</a></span>
-                  <button class="field-edit-btn" aria-label="Edit Application case" type="button">
+                  <span class="field-value field-value--muted"></span>
+                  <button class="field-edit-btn" aria-label="Edit Application Case" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
               </div>
 
               <div class="record-field">
-                <span class="field-label">Applicant role</span>
+                <span class="field-label">Applicant Role</span>
                 <div class="field-value-row">
-                  <span class="field-value">Applicant</span>
-                  <button class="field-edit-btn" aria-label="Edit Applicant role" type="button">
+                  <span class="field-value field-value--muted"></span>
+                  <button class="field-edit-btn" aria-label="Edit Applicant Role" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
@@ -818,7 +818,7 @@
               <div class="record-field">
                 <span class="field-label">Category</span>
                 <div class="field-value-row">
-                  <span class="field-value">Family law — parenting</span>
+                  <span class="field-value">Criminal law problem</span>
                   <button class="field-edit-btn" aria-label="Edit Category" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
@@ -826,10 +826,10 @@
               </div>
 
               <div class="record-field">
-                <span class="field-label">Applied date</span>
+                <span class="field-label">Applied Date</span>
                 <div class="field-value-row">
-                  <span class="field-value">28 Apr 2026</span>
-                  <button class="field-edit-btn" aria-label="Edit Applied date" type="button">
+                  <span class="field-value">8 Apr 2026, 12:00 PM</span>
+                  <button class="field-edit-btn" aria-label="Edit Applied Date" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
@@ -838,7 +838,7 @@
               <div class="record-field">
                 <span class="field-label">Account</span>
                 <div class="field-value-row">
-                  <span class="field-value"><a href="#" class="field-value--link">Okafor Legal Pty Ltd</a></span>
+                  <span class="field-value"><a href="#" class="field-value--link">Adriana Chapman</a></span>
                   <button class="field-edit-btn" aria-label="Edit Account" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
@@ -848,58 +848,48 @@
               <div class="record-field">
                 <span class="field-label">Legal problem</span>
                 <div class="field-value-row">
-                  <span class="field-value">Parenting — child arrangements</span>
+                  <span class="field-value field-value--muted"></span>
                   <button class="field-edit-btn" aria-label="Edit Legal problem" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
               </div>
 
-              <div class="record-field">
+              <div class="record-field record-form--full">
                 <span class="field-label">Reason to apply for legal aid</span>
                 <div class="field-value-row">
-                  <span class="field-value">Client is seeking parenting orders for two children. The other party has relocated interstate without agreement.</span>
-                  <button class="field-edit-btn" aria-label="Edit Reason" type="button">
+                  <span class="field-value field-value--muted"></span>
+                  <button class="field-edit-btn" aria-label="Edit Reason to apply for legal aid" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
               </div>
 
-              <div class="record-field">
+              <div class="record-field record-form--full">
                 <span class="field-label">Need to go to court?</span>
                 <div class="field-value-row">
-                  <span class="field-value">Yes</span>
+                  <span class="field-value field-value--muted"></span>
                   <button class="field-edit-btn" aria-label="Edit Need to go to court" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
               </div>
 
-              <div class="record-field">
+              <div class="record-field record-form--full">
                 <span class="field-label">Permission to retrieve QP9 copy?</span>
                 <div class="field-value-row">
-                  <span class="field-value">Yes</span>
+                  <span class="field-value field-value--muted"></span>
                   <button class="field-edit-btn" aria-label="Edit Permission to retrieve QP9 copy" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
               </div>
 
-              <div class="record-field">
+              <div class="record-field record-form--full">
                 <span class="field-label">QP9 copy exists?</span>
                 <div class="field-value-row">
-                  <span class="field-value">No</span>
+                  <span class="field-value field-value--muted"></span>
                   <button class="field-edit-btn" aria-label="Edit QP9 copy exists" type="button">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <div class="record-field">
-                <span class="field-label">Applicant</span>
-                <div class="field-value-row">
-                  <span class="field-value"><a href="#" class="field-value--link">Priya Sharma</a></span>
-                  <button class="field-edit-btn" aria-label="Edit Applicant" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
@@ -921,7 +911,7 @@
               <div class="record-field">
                 <span class="field-label">Household type</span>
                 <div class="field-value-row">
-                  <span class="field-value">Single parent</span>
+                  <span class="field-value">Couple</span>
                   <button class="field-edit-btn" aria-label="Edit Household type" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
@@ -929,20 +919,20 @@
               </div>
 
               <div class="record-field">
-                <span class="field-label">Work status</span>
+                <span class="field-label">Work Status</span>
                 <div class="field-value-row">
-                  <span class="field-value">Part-time employed</span>
-                  <button class="field-edit-btn" aria-label="Edit Work status" type="button">
+                  <span class="field-value">Both in workforce</span>
+                  <button class="field-edit-btn" aria-label="Edit Work Status" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
               </div>
 
               <div class="record-field">
-                <span class="field-label">Household income</span>
+                <span class="field-label">Household Income</span>
                 <div class="field-value-row">
-                  <span class="field-value">$38,200.00</span>
-                  <button class="field-edit-btn" aria-label="Edit Household income" type="button">
+                  <span class="field-value">USD 1,500.00</span>
+                  <button class="field-edit-btn" aria-label="Edit Household Income" type="button">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </button>
                 </div>
@@ -976,56 +966,44 @@
             </div>
           </div>
 
-          <!-- Filters -->
-          <div class="activity-filters">
-            <button class="activity-filter-pill" type="button">
-              All time
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <button class="activity-filter-pill" type="button">
-              All activities
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <button class="activity-filter-pill" type="button">
-              All types
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
+          <!-- Filters line (text only, matching screenshot) -->
+          <div class="activity-filters" style="font-size:0.75rem;color:#706e6b;padding:6px 12px;border-bottom:1px solid #f3f3f3;gap:4px;">
+            Filters: All time &bull; All activities &bull; All types
           </div>
 
           <!-- Toolbar -->
           <div class="activity-toolbar">
             <a href="#" class="activity-toolbar-link">Refresh</a>
-            <a href="#" class="activity-toolbar-link">Expand all</a>
-            <a href="#" class="activity-toolbar-link">View all</a>
+            <a href="#" class="activity-toolbar-link">Expand All</a>
+            <a href="#" class="activity-toolbar-link">View All</a>
           </div>
 
           <!-- Upcoming & Overdue -->
-          <div class="timeline-section-header">Upcoming &amp; Overdue</div>
-          <ul class="timeline-list" aria-label="Upcoming and overdue activities">
-            <li class="timeline-entry">
-              <div class="timeline-entry__icon timeline-entry__icon--task" aria-hidden="true">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div class="timeline-entry__body">
-                <div class="timeline-entry__title">Review supporting documents</div>
-                <div class="timeline-entry__meta">Task · Due 15 May 2026 · Assigned to Grants Officer</div>
-              </div>
-              <button class="btn--icon-bare timeline-entry__expand" type="button" aria-label="Expand entry">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-            </li>
-          </ul>
+          <div class="timeline-section-header" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            Upcoming &amp; Overdue
+          </div>
+          <div style="padding:12px 16px;font-size:0.8125rem;color:#706e6b;text-align:center;line-height:1.5;">
+            No activities to show.<br>Get started by sending an email, scheduling a task, and more.
+          </div>
 
-          <!-- May 2026 -->
-          <div class="timeline-month-header">May 2026</div>
-          <ul class="timeline-list" aria-label="May 2026 activities">
+          <!-- April 2026 -->
+          <div class="timeline-month-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              April · 2026
+            </span>
+            <span style="font-size:0.75rem;color:#706e6b;font-weight:400;">2 Months Ago</span>
+          </div>
+          <ul class="timeline-list" aria-label="April 2026 activities">
             <li class="timeline-entry">
               <div class="timeline-entry__icon timeline-entry__icon--email" aria-hidden="true">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               </div>
               <div class="timeline-entry__body">
-                <div class="timeline-entry__title">Application received confirmation</div>
-                <div class="timeline-entry__meta">Email · 02 May 2026, 9:30 am</div>
+                <div class="timeline-entry__title">Requirement for more details - IA-0000000446</div>
+                <div class="timeline-entry__meta">You sent an email to <a href="#" class="field-value--link" style="font-size:0.75rem;">gauravjain@salesforce.com</a></div>
+                <div class="timeline-entry__meta">3:30 PM · Apr 9</div>
               </div>
               <button class="btn--icon-bare timeline-entry__expand" type="button" aria-label="Expand entry">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1033,62 +1011,15 @@
             </li>
           </ul>
 
-          <!-- April 2026 -->
-          <div class="timeline-month-header">April 2026</div>
-          <ul class="timeline-list" aria-label="April 2026 activities">
-            <li class="timeline-entry">
-              <div class="timeline-entry__icon timeline-entry__icon--log" aria-hidden="true">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <div class="timeline-entry__body">
-                <div class="timeline-entry__title">Application assigned for review</div>
-                <div class="timeline-entry__meta">Log · 29 Apr 2026, 9:15 am</div>
-              </div>
-              <button class="btn--icon-bare timeline-entry__expand" type="button" aria-label="Expand entry">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-            </li>
-            <li class="timeline-entry">
-              <div class="timeline-entry__icon timeline-entry__icon--event" aria-hidden="true">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </div>
-              <div class="timeline-entry__body">
-                <div class="timeline-entry__title">Application submitted</div>
-                <div class="timeline-entry__meta">Event · 28 Apr 2026, 2:47 pm · Lucas Okafor</div>
-              </div>
-              <button class="btn--icon-bare timeline-entry__expand" type="button" aria-label="Expand entry">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-            </li>
-            <li class="timeline-entry">
-              <div class="timeline-entry__icon timeline-entry__icon--task" aria-hidden="true">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div class="timeline-entry__body">
-                <div class="timeline-entry__title">3 supporting documents uploaded</div>
-                <div class="timeline-entry__meta">Task · 28 Apr 2026, 2:45 pm · Lucas Okafor</div>
-              </div>
-              <button class="btn--icon-bare timeline-entry__expand" type="button" aria-label="Expand entry">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-            </li>
-            <li class="timeline-entry">
-              <div class="timeline-entry__icon timeline-entry__icon--log" aria-hidden="true">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <div class="timeline-entry__body">
-                <div class="timeline-entry__title">Application created</div>
-                <div class="timeline-entry__meta">Log · 27 Apr 2026, 11:22 am · Lucas Okafor</div>
-              </div>
-              <button class="btn--icon-bare timeline-entry__expand" type="button" aria-label="Expand entry">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-            </li>
-          </ul>
+          <!-- Info notice -->
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:#f3f2f2;border-top:1px solid #e5e5e5;font-size:0.75rem;color:#3e3e3c;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#706e6b" stroke-width="2" style="flex-shrink:0;margin-top:1px;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            To change what's shown, try changing your filters.
+          </div>
 
           <!-- Show All Activities -->
           <div class="timeline-show-all">
-            <a href="#">Show all activities</a>
+            <button type="button" style="background:#0176D3;color:#fff;border:none;border-radius:4px;padding:6px 16px;font-size:0.8125rem;font-weight:600;cursor:pointer;font-family:inherit;">Show All Activities</button>
           </div>
         </div>
       </div><!-- /right rail -->
