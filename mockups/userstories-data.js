@@ -32,7 +32,8 @@ var LAQ_US = (function () {
     },
     'FR-BI-305': {
       role: 'In-house Practitioner / In-house Solicitor',
-      text: 'I want to use a portal that complies with web content accessibility guidelines (WCAG 2.1 Level AA, so that the platform is fully accessible regardless of my abilities.'
+      text: 'I want to use a portal that complies with web content accessibility guidelines (WCAG 2.1 Level AA, so that the platform is fully accessible regardless of my abilities.',
+      global: true
     },
     'FR-BI-306': {
       role: 'Administrator',
@@ -52,7 +53,8 @@ var LAQ_US = (function () {
     },
     'FR-BI-311': {
       role: 'In-house Practitioner, Solicitor, CLC and FDRP',
-      text: 'I want to use context-based search functionality, including predictive text, so that I can complete my searches for clients or documents faster.'
+      text: 'I want to use context-based search functionality, including predictive text, so that I can complete my searches for clients or documents faster.',
+      global: true
     },
     'FR-BI-312': {
       role: 'In-house Solicitor, CLC',

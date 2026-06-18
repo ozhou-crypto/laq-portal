@@ -95,6 +95,10 @@
         'border-radius:4px;padding:2px 8px;',
         'margin-bottom:6px;letter-spacing:.02em;',
       '}',
+      '.laq-us-global{',
+        'font-size:0.75rem;font-weight:400;color:#92400E;',
+        'margin-left:4px;',
+      '}',
       '.laq-us-role{',
         'font-size:0.8125rem;font-weight:600;color:#555;',
         'margin-bottom:4px;',
@@ -164,6 +168,7 @@
       list.innerHTML = storyList.map(function (s) {
         return '<div class="laq-us-item">' +
           '<span class="laq-us-id">' + s.id + '</span>' +
+          (s.global ? '<span class="laq-us-global"> (For all screens)</span>' : '') +
           '<div class="laq-us-role">As a ' + s.role + ',</div>' +
           '<div class="laq-us-text">' + s.text + '</div>' +
           '</div>';
