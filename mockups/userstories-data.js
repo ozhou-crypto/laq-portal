@@ -167,12 +167,10 @@ var LAQ_US = (function () {
     var key = base.match(/^(S\d+[a-z]*|index)/i);
     key = key ? key[1] : null;
 
-    var ids = [].concat(screens['_all'] || []);
-    if (key && screens[key]) {
-      // Avoid duplicates
-      var pageIds = screens[key].filter(function (id) { return ids.indexOf(id) === -1; });
-      ids = screens[key].concat(screens['_all'].filter(function (id) { return pageIds.indexOf(id) === -1; }));
-    }
+    var pageIds = (key && screens[key]) ? screens[key] : [];
+    var allIds = screens['_all'] || [];
+    // Page-specific IDs first, then global IDs not already listed
+    var ids = pageIds.concat(allIds.filter(function (id) { return pageIds.indexOf(id) === -1; }));
 
     return ids
       .filter(function (id) { return stories[id]; })
