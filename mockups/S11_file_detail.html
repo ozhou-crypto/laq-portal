@@ -1,503 +1,336 @@
 <!--
-  S11 — File Detail (Summary View)
-  Design Rationale (~200 words):
-  This screen is the single source of truth for a grant of legal aid. It uses a
-  Two-Column LWR layout (main ~66% + right rail ~33%) to prioritise the grant
-  record content in the main column while surfacing decision letters, assigned
-  parties, and notifications in the right rail for quick reference.
+  S11 — Grant of Aid Record (Summary View)
+  LWR Layout: Single-Column with two-column content grid
 
-  The Highlights Panel (navy banner) provides instant orientation: client identity,
-  Q-number, matter type, status, and scope at a glance. The Record Actions bar
-  gives direct access to the four most common practitioner actions. Below, ARIA-
-  compliant tabs segment content into Summary, Correspondence, Documents, Invoices,
-  Outcomes, and Activity history — only Summary is rendered in this mockup.
+  Layout follows S07 format: white background, standard SLDS page header
+  with icon, label, record title, action buttons and toolbar. Record content
+  is presented in cards below with a two-column grid (main + right rail).
 
-  Within the Summary tab, scope utilisation is the only custom component (LWC:
-  ScopeBar) because no OOTB component renders an inline progress bar with warning
-  text. Everything else — record forms, related lists, breadcrumbs, tabs — maps
-  directly to standard Experience Cloud components.
-
-  LWR Layout: Two-Column (main ~66% + right rail ~33%)
   Component regions:
-  OOTB: Navigation Menu — standard Experience Cloud top nav
-  OOTB: Breadcrumbs — standard breadcrumb trail from Home > My Grant of Aid > record
-  OOTB: Record Detail — Highlights Panel on GrantFile__c — navy band with avatar, client name, key fields, status
-  OOTB: Record Actions — standard quick action buttons (Request extension, Submit invoice, Upload document, Send message)
+  OOTB: Navigation Menu — standard EC header + teal nav bar
+  OOTB: Breadcrumbs — Home > My Grant of Aid > record
+  OOTB: Record Detail — page header with record name and action buttons
   OOTB: Record Detail — Tabs on GrantFile__c — Summary, Correspondence, Documents, Invoices, Outcomes, Activity history
   OOTB: Record Form — Scope and commitment fields in 2-column layout
   OOTB: Related List — Grant conditions rows from GrantCondition__c
   OOTB: Record Form — Key dates fields in 2-column layout
-  OOTB: Record Form — Assigned LAQ contact (single record row from User/Contact)
-  OOTB: Related List — Decision letters from DecisionLetter__c (right rail)
-  OOTB: Related List — Assigned parties from AssignedParty__c (right rail)
-  OOTB: Related List — Recent notifications from Notification__c (right rail)
-  Custom: LWC:ScopeBar — progress bar showing scope utilisation percentage; no standard component renders an 8px inline progress bar with warning text inside a Record Form region. Justified.
-  12 OOTB + 1 Custom = 92% OOTB. Within acceptable threshold.
+  OOTB: Record Form — Assigned LAQ contact
+  OOTB: Related List — Decision letters (right rail)
+  OOTB: Related List — Assigned parties (right rail)
+  OOTB: Related List — Recent notifications (right rail)
+  Custom: LWC:ScopeBar — progress bar showing scope utilisation percentage
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>S11 — File Detail — Q-2024-003847 — Maria Tran — LAQ Practitioner Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&amp;display=swap" rel="stylesheet" />
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grant of Aid record — Q-2024-003847 — Maria Tran — LAQ Practitioner Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
-    font-size: 1rem;
-    line-height: 1.5;
-    color: #181818;
-    background: #f3f3f3;
-    min-height: 100vh;
-  }
-
-  /* ── Standard chrome ── */
-  .skip-link {
-    position: absolute; top: -100px; left: 0;
-    background: #05325F; color: #fff;
-    padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 700;
-    z-index: 9999; text-decoration: none; border-radius: 0 0 0.25rem 0;
-  }
-  .skip-link:focus { top: 0; }
-  .accent-strip { height: 33px; background: rgba(71, 195, 211, 0.2); }
-  .site-header {
-    background: #fff; height: 97px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 32px; border-bottom: 1px solid #e5e5e5;
-  }
-  .site-logo { display: flex; align-items: center; text-decoration: none; }
-  .header-right { display: flex; align-items: center; gap: 16px; }
-  .header-search {
-    display: flex; align-items: center; gap: 10px;
-    background: #f3f3f3; border-radius: 24px; height: 48px; padding: 0 20px; width: 310px;
-  }
-  .header-search input {
-    background: none; border: none; outline: none;
-    font-size: 1.125rem; font-family: inherit; color: #080707; width: 100%;
-  }
-  .header-search input::placeholder { color: #767676; }
-  .header-search input:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
-  .header-bell {
-    background: none; border: none; cursor: pointer;
-    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-    color: #3e3e3c; position: relative;
-  }
-  .header-bell:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
-  .header-user {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 1.125rem; color: #005288;
-    background: none; border: none; cursor: pointer; font-family: inherit;
-  }
-  .header-user:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
-  .primary-nav {
-    background: #0f8291; height: 56px;
-    display: flex; align-items: center; padding: 0 49px; gap: 60px;
-  }
-  .primary-nav a {
-    font-size: 1rem; font-weight: 400; color: #fff; text-decoration: none;
-    height: 56px; display: flex; align-items: center; padding: 0 5px;
-    border-bottom: 2px solid transparent; white-space: nowrap;
-  }
-  .primary-nav a.active { font-weight: 700; border-bottom-color: #fff; }
-  .primary-nav a:hover { opacity: 0.85; }
-  .primary-nav a:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
-  .site-footer { background: #daf3f6; }
-  .footer-main { display: flex; justify-content: space-between; padding: 40px 77px 0; gap: 40px; }
-  .footer-col-primary { max-width: 528px; }
-  .footer-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
-  .footer-body { font-size: 1rem; color: #181818; line-height: 1.5625; }
-  .footer-col-visit { min-width: 160px; }
-  .footer-col-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
-  .footer-address { font-size: 1rem; color: #181818; line-height: 1.5625; }
-  .footer-more-link { display: inline-block; margin-top: 12px; font-size: 1rem; color: #181818; text-decoration: underline; }
-  .footer-social-icons { display: flex; gap: 12px; margin-top: 4px; }
-  .footer-social-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
-  .footer-links { display: flex; gap: 88px; padding: 16px 77px 20px; }
-  .footer-links a { font-size: 1rem; color: #181818; text-decoration: underline; }
-
-  /* ── Breadcrumb ── */
-  .breadcrumb {
-    padding: 0.75rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    font-size: 0.875rem;
-    color: #595959;
-    background: white;
-    border-bottom: 1px solid #e5e5e5;
-  }
-  .breadcrumb a { color: #05325F; text-decoration: none; }
-  .breadcrumb a:hover { text-decoration: underline; }
-  .breadcrumb a:focus-visible { outline: 2px solid #05325F; outline-offset: 2px; border-radius: 2px; }
-  .breadcrumb__sep { color: #b0adab; }
-  .breadcrumb__current { color: #595959; }
-
-  /* ── Highlights panel (OOTB: Record Detail Highlights Panel) ── */
-  .highlights-panel {
-    background: #05325F;
-    padding: 1rem 1.5rem;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.875rem;
-  }
-  .highlights-avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background: #b0adab;
-    color: white;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 0.125rem;
-    border: 1.5px solid rgba(255,255,255,0.3);
-  }
-  .highlights-body { flex: 1; min-width: 0; }
-  .highlights-name {
-    color: white;
-    font-size: 1.125rem;
-    font-weight: 700;
-    line-height: 1.3;
-  }
-  .highlights-meta {
-    color: rgba(255,255,255,0.78);
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-  }
-  .highlights-right {
-    flex-shrink: 0;
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.375rem;
-  }
-  .highlights-status {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    color: white;
-    font-size: 0.9375rem;
-    font-weight: 600;
-  }
-  .status-dot-sm {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background: #4bca81;
-  }
-  .highlights-scope {
-    color: rgba(255,255,255,0.85);
-    font-size: 0.875rem;
-  }
-  .highlights-conditions {
-    font-size: 0.875rem;
-  }
-  .highlights-conditions a {
-    color: rgba(255,255,255,0.85);
-    text-decoration: underline;
-  }
-  .highlights-conditions a:hover { color: white; }
-  .highlights-conditions a:focus-visible { outline: 2px solid white; outline-offset: 2px; border-radius: 2px; }
-
-  /* ── Record Actions bar (OOTB: Record Actions) ── */
-  .record-actions-bar {
-    background: white;
-    border-bottom: 1px solid #e5e5e5;
-    padding: 0.625rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    height: 2rem;
-    padding: 0 1rem;
-    border-radius: 0.25rem;
-    font-size: 0.9375rem;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    border: 1px solid transparent;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  .btn:focus-visible { outline: 2px solid #05325F; outline-offset: 2px; }
-  .btn--primary { background: #05325F; color: white; border-color: #05325F; }
-  .btn--primary:hover { background: #09549F; border-color: #09549F; }
-  .btn--neutral { background: white; color: #181818; border-color: #dddbda; }
-  .btn--neutral:hover { background: #f3f2f2; }
-
-  /* ── Tabs (OOTB: Record Detail Tabs) ── */
-  .slds-tabs {
-    border-bottom: 1px solid #e5e5e5;
-    display: flex;
-    padding: 0 1.5rem;
-    background: white;
-    gap: 0;
-    overflow-x: auto;
-  }
-  .slds-tabs__item {
-    padding: 0.75rem 1rem;
-    font-size: 0.9375rem;
-    color: #595959;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    white-space: nowrap;
-    text-decoration: none;
-    display: block;
-  }
-  .slds-tabs__item:hover { color: #181818; }
-  .slds-tabs__item:focus-visible { outline: 2px solid #05325F; outline-offset: -2px; }
-  .slds-tabs__item.is-active {
-    color: #05325F;
-    font-weight: 600;
-    border-bottom-color: #05325F;
-  }
-
-  /* ── Page content ── */
-  .page-content {
-    padding: 1.25rem 1.5rem;
-    display: grid;
-    grid-template-columns: 1fr 20rem;
-    gap: 1rem;
-    align-items: start;
-  }
-
-  /* ── Card ── */
-  .slds-card {
-    background: white;
-    border: 1px solid #e5e5e5;
-    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.10);
-    border-radius: 0.25rem;
-    margin-bottom: 1rem;
-  }
-  .slds-card:last-child { margin-bottom: 0; }
-  .slds-card__header {
-    padding: 0.75rem 1rem 0.5rem;
-    border-bottom: 1px solid #e5e5e5;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .slds-card__title {
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: #181818;
-  }
-  .slds-card__header-link {
-    font-size: 0.875rem;
-    color: #05325F;
-    text-decoration: none;
-  }
-  .slds-card__header-link:hover { text-decoration: underline; }
-  .slds-card__body { padding: 0.875rem 1rem; }
-
-  /* ── Record Form fields (2-col) ── */
-  .record-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem 1.5rem;
-  }
-  .record-form--single { grid-template-columns: 1fr; }
-  .record-field { display: flex; flex-direction: column; gap: 0.125rem; }
-  .field-label { font-size: 0.75rem; font-weight: 600; color: #595959; text-transform: uppercase; letter-spacing: 0.04em; }
-  .field-value { font-size: 0.9375rem; color: #181818; }
-  .field-value--link { color: #05325F; text-decoration: none; }
-  .field-value--link:hover { text-decoration: underline; }
-  .field-value--link:focus-visible { outline: 2px solid #05325F; outline-offset: 2px; border-radius: 2px; }
-  .field-value--warning { color: #c23934; }
-  .field-value--muted { color: #595959; }
-
-  /* ── Scope progress bar (Custom: LWC:ScopeBar) ── */
-  .scope-bar-wrap { margin-top: 0.875rem; }
-  .scope-bar-track {
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    background: #e5e5e5;
-    overflow: hidden;
-  }
-  .scope-bar-fill {
-    width: 72%;
-    height: 100%;
-    background: #05325F;
-    border-radius: 4px;
-  }
-  .scope-bar-label {
-    font-size: 0.8125rem;
-    color: #595959;
-    margin-top: 0.375rem;
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-  .scope-bar-label--warning { color: #e07b00; }
-  .scope-bar-label svg { flex-shrink: 0; }
-
-  /* ── Conditions list ── */
-  .conditions-list { list-style: none; }
-  .conditions-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.625rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #f3f3f3;
-    font-size: 0.9375rem;
-  }
-  .conditions-list li:last-child { border-bottom: none; }
-  .condition-icon { flex-shrink: 0; margin-top: 0.1rem; }
-  .condition-name { color: #181818; font-weight: 600; }
-  .condition-status { font-size: 0.8125rem; color: #595959; margin-top: 0.075rem; }
-  .condition-status--action { color: #c23934; }
-
-  /* ── Assigned contact ── */
-  .contact-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  .contact-avatar {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    background: #b0adab;
-    color: white;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .contact-name { font-size: 0.9375rem; font-weight: 600; color: #181818; }
-  .contact-role { font-size: 0.8125rem; color: #595959; }
-  .contact-actions { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
-  .contact-action-link { font-size: 0.8125rem; color: #05325F; text-decoration: none; }
-  .contact-action-link:hover { text-decoration: underline; }
-  .contact-action-link:focus-visible { outline: 2px solid #05325F; outline-offset: 2px; border-radius: 2px; }
-
-  /* ── Related list rows (right rail) ── */
-  .rl-list { list-style: none; }
-  .rl-list li {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #f3f3f3;
-  }
-  .rl-list li:last-child { border-bottom: none; }
-  .rl-item-icon { color: #595959; flex-shrink: 0; margin-top: 0.1rem; }
-  .rl-item-body { flex: 1; min-width: 0; }
-  .rl-item-title { font-size: 0.9375rem; color: #181818; }
-  .rl-item-title--link { color: #05325F; text-decoration: none; }
-  .rl-item-title--link:hover { text-decoration: underline; }
-  .rl-item-title--link:focus-visible { outline: 2px solid #05325F; outline-offset: 2px; border-radius: 2px; }
-  .rl-item-meta { font-size: 0.8125rem; color: #595959; }
-  .rl-item-action { flex-shrink: 0; }
-  .rl-pdf-link {
-    font-size: 0.8125rem;
-    color: #05325F;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-  .rl-pdf-link:hover { text-decoration: underline; }
-  .rl-pdf-link:focus-visible { outline: 2px solid #05325F; outline-offset: 2px; border-radius: 2px; }
-
-  /* ── Party rows ── */
-  .party-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #f3f3f3;
-    font-size: 0.9375rem;
-  }
-  .party-row:last-child { border-bottom: none; }
-  .party-avatar {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    background: #b0adab;
-    color: white;
-    font-size: 0.5625rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  .party-name { color: #181818; font-weight: 600; }
-  .party-role { font-size: 0.8125rem; color: #595959; }
-
-  /* ── Notif rows ── */
-  .notif-row {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #f3f3f3;
-    font-size: 0.9375rem;
-  }
-  .notif-row:last-child { border-bottom: none; }
-  .notif-text { color: #181818; line-height: 1.4; }
-  .notif-time { font-size: 0.8125rem; color: #595959; margin-top: 0.125rem; }
-
-  /* ── Focus states (WCAG 2.2 AA) ── */
-  :focus-visible {
-    outline: 2px solid #09549F;
-    outline-offset: 2px;
-  }
-
-  /* ── Responsive: stack columns at mobile widths ── */
-  @media (max-width: 768px) {
-    .page-content {
-      grid-template-columns: 1fr;
-    }
-    .highlights-panel {
+    body {
+      font-family: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #181818;
+      background: #fff;
+      min-height: 100vh;
+      display: flex;
       flex-direction: column;
-      align-items: flex-start;
     }
-    .highlights-right {
-      align-items: flex-start;
-      text-align: left;
-      margin-top: 0.5rem;
+
+    a { color: #005288; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a:focus-visible { outline: 2px solid #09549F; outline-offset: 2px; border-radius: 2px; }
+
+    /* ── Skip link ── */
+    .skip-link {
+      position: absolute; top: -100px; left: 0;
+      background: #05325F; color: #fff;
+      padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 700;
+      z-index: 9999; text-decoration: none; border-radius: 0 0 0.25rem 0;
     }
-    .record-form {
-      grid-template-columns: 1fr;
-    }
-    .primary-nav {
-      gap: 24px;
-      padding: 0 16px;
-      overflow-x: auto;
-    }
+    .skip-link:focus { top: 0; }
+
+    /* ── Cyan accent strip ── */
+    .accent-strip { height: 33px; background: rgba(71, 195, 211, 0.2); }
+
+    /* ── White header ── */
     .site-header {
-      padding: 0 16px;
+      background: #fff; height: 97px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; border-bottom: 1px solid #e5e5e5;
     }
+    .site-logo { display: flex; align-items: center; text-decoration: none; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
     .header-search {
-      width: 200px;
+      display: flex; align-items: center; gap: 10px;
+      background: #f3f3f3; border-radius: 24px; height: 48px; padding: 0 20px; width: 310px;
     }
-    .footer-main {
-      flex-direction: column;
-      padding: 24px 24px 0;
+    .header-search input {
+      background: none; border: none; outline: none;
+      font-size: 1.125rem; font-family: inherit; color: #080707; width: 100%;
     }
-    .footer-links {
-      flex-direction: column;
+    .header-search input::placeholder { color: #767676; }
+    .header-search input:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+    .header-bell {
+      background: none; border: none; cursor: pointer;
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      color: #3e3e3c; position: relative;
+    }
+    .header-bell:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
+    .header-user {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 1.125rem; color: #005288;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+    }
+    .header-user:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
+
+    /* ── Teal primary nav bar ── */
+    .primary-nav {
+      background: #0f8291; height: 56px;
+      display: flex; align-items: center; padding: 0 49px; gap: 60px;
+    }
+    .primary-nav a {
+      font-size: 1rem; font-weight: 400; color: #fff; text-decoration: none;
+      height: 56px; display: flex; align-items: center; padding: 0 5px;
+      border-bottom: 2px solid transparent; white-space: nowrap;
+    }
+    .primary-nav a.active { font-weight: 700; border-bottom-color: #fff; }
+    .primary-nav a:hover { opacity: 0.85; }
+    .primary-nav a:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+
+    /* ── Main content ── */
+    .main {
+      flex: 1;
+      padding: 24px 59px;
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 0.375rem;
+      font-size: 0.8125rem; color: #595959;
+      margin-bottom: 16px;
+    }
+    .breadcrumb a { color: #005288; }
+    .breadcrumb__sep { color: #b0adab; }
+    .breadcrumb__current { color: #595959; }
+
+    /* ── Page header (matches S07 style) ── */
+    .list-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .list-header-left {
+      display: flex;
+      align-items: flex-start;
       gap: 12px;
-      padding: 16px 24px 20px;
     }
-  }
-</style>
+    .list-icon {
+      width: 36px; height: 36px;
+      background: #0f8291;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .list-meta-label { font-size: 0.8125rem; color: #080707; margin-bottom: 2px; }
+    .list-meta-title { display: flex; align-items: center; gap: 8px; }
+    .list-meta-title h1 { font-size: 1.125rem; font-weight: 700; color: #080707; }
+    .list-meta-sub {
+      font-size: 0.8125rem; color: #595959; margin-top: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #2e844a;
+      display: inline-block; flex-shrink: 0;
+    }
+
+    /* Header right: action buttons */
+    .list-header-right {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    }
+    .btn-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn-primary-sm {
+      display: inline-flex; align-items: center; height: 32px; padding: 0 16px;
+      font-size: 0.8125rem; font-weight: 700; color: #fff;
+      background: #05325F; border: 1px solid #05325F;
+      border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .btn-primary-sm:hover { background: #09549F; border-color: #09549F; }
+    .btn-primary-sm:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+    .btn-neutral-sm {
+      display: inline-flex; align-items: center; height: 32px; padding: 0 16px;
+      font-size: 0.8125rem; font-weight: 400; color: #005288;
+      background: #fff; border: 1px solid #dddbda;
+      border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .btn-neutral-sm:hover { background: #f3f3f3; }
+    .btn-neutral-sm:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+
+    /* Toolbar */
+    .list-toolbar {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .icon-btn {
+      width: 32px; height: 32px;
+      background: #fff; border: 1px solid #dddbda; border-radius: 4px;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .icon-btn:hover { background: #f3f3f3; }
+    .icon-btn:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+
+    /* ── Tabs ── */
+    .slds-tabs {
+      border-bottom: 1px solid #dddbda;
+      display: flex; gap: 0;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    .slds-tabs__item {
+      padding: 10px 16px;
+      font-size: 0.9375rem; color: #595959;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; white-space: nowrap; text-decoration: none; display: block;
+    }
+    .slds-tabs__item:hover { color: #181818; }
+    .slds-tabs__item:focus-visible { outline: 2px solid #05325F; outline-offset: -2px; }
+    .slds-tabs__item.is-active { color: #05325F; font-weight: 600; border-bottom-color: #05325F; }
+
+    /* ── Two-column content grid ── */
+    .record-content {
+      display: grid;
+      grid-template-columns: 1fr 20rem;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    /* ── Cards ── */
+    .slds-card {
+      background: #fff; border: 1px solid #dddbda;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      border-radius: 4px; margin-bottom: 12px;
+    }
+    .slds-card:last-child { margin-bottom: 0; }
+    .slds-card__header {
+      padding: 10px 16px 8px; border-bottom: 1px solid #e5e5e5;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .slds-card__title { font-size: 0.9375rem; font-weight: 700; color: #181818; }
+    .slds-card__header-link { font-size: 0.875rem; color: #005288; text-decoration: none; }
+    .slds-card__header-link:hover { text-decoration: underline; }
+    .slds-card__body { padding: 12px 16px; }
+
+    /* ── Record form fields ── */
+    .record-form {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+    }
+    .record-field { display: flex; flex-direction: column; gap: 2px; }
+    .field-label { font-size: 0.75rem; font-weight: 600; color: #595959; text-transform: uppercase; letter-spacing: 0.04em; }
+    .field-value { font-size: 0.9375rem; color: #181818; }
+    .field-value--warning { color: #c23934; }
+
+    /* ── Scope bar (Custom LWC:ScopeBar) ── */
+    .scope-bar-wrap { margin-top: 12px; }
+    .scope-bar-track { width: 100%; height: 8px; border-radius: 4px; background: #e5e5e5; overflow: hidden; }
+    .scope-bar-fill { width: 72%; height: 100%; background: #05325F; border-radius: 4px; }
+    .scope-bar-label {
+      font-size: 0.8125rem; color: #595959; margin-top: 4px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .scope-bar-label--warning { color: #e07b00; }
+
+    /* ── Conditions list ── */
+    .conditions-list { list-style: none; }
+    .conditions-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid #f3f3f3; font-size: 0.9375rem;
+    }
+    .conditions-list li:last-child { border-bottom: none; }
+    .condition-name { color: #181818; font-weight: 600; }
+    .condition-status { font-size: 0.8125rem; color: #595959; margin-top: 2px; }
+    .condition-status--action { color: #c23934; }
+
+    /* ── Contact row ── */
+    .contact-row { display: flex; align-items: center; gap: 12px; }
+    .contact-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #b0adab; color: #fff; font-size: 0.6875rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .contact-name { font-size: 0.9375rem; font-weight: 600; color: #181818; }
+    .contact-role { font-size: 0.8125rem; color: #595959; }
+    .contact-actions { display: flex; gap: 12px; margin-top: 2px; }
+    .contact-action-link { font-size: 0.8125rem; color: #005288; text-decoration: none; }
+    .contact-action-link:hover { text-decoration: underline; }
+
+    /* ── Related list rows ── */
+    .rl-list { list-style: none; }
+    .rl-list li {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid #f3f3f3;
+    }
+    .rl-list li:last-child { border-bottom: none; }
+    .rl-item-icon { color: #595959; flex-shrink: 0; margin-top: 2px; }
+    .rl-item-body { flex: 1; min-width: 0; }
+    .rl-item-title { font-size: 0.9375rem; color: #181818; }
+    .rl-item-meta { font-size: 0.8125rem; color: #595959; }
+    .rl-pdf-link {
+      font-size: 0.8125rem; color: #005288; text-decoration: none;
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    }
+    .rl-pdf-link:hover { text-decoration: underline; }
+
+    /* ── Party rows ── */
+    .party-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid #f3f3f3; font-size: 0.9375rem;
+    }
+    .party-row:last-child { border-bottom: none; }
+    .party-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #b0adab; color: #fff; font-size: 0.5625rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .party-name { font-weight: 600; color: #181818; }
+    .party-role { font-size: 0.8125rem; color: #595959; }
+
+    /* ── Notification rows ── */
+    .notif-row { padding: 8px 0; border-bottom: 1px solid #f3f3f3; font-size: 0.9375rem; }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-text { color: #181818; line-height: 1.4; }
+    .notif-time { font-size: 0.8125rem; color: #595959; margin-top: 2px; }
+
+    /* ── Footer ── */
+    .site-footer { background: #daf3f6; }
+    .footer-main { display: flex; justify-content: space-between; padding: 40px 77px 0; gap: 40px; }
+    .footer-col-primary { max-width: 528px; }
+    .footer-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
+    .footer-body { font-size: 1rem; color: #181818; line-height: 1.5625; }
+    .footer-col-visit { min-width: 160px; }
+    .footer-col-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
+    .footer-address { font-size: 1rem; color: #181818; line-height: 1.5625; }
+    .footer-more-link { display: inline-block; margin-top: 12px; font-size: 1rem; color: #181818; text-decoration: underline; }
+    .footer-social-icons { display: flex; gap: 12px; margin-top: 4px; }
+    .footer-social-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+    .footer-links { display: flex; gap: 88px; padding: 16px 77px 20px; }
+    .footer-links a { font-size: 1rem; color: #181818; text-decoration: underline; }
+
+    @media (max-width: 900px) {
+      .record-content { grid-template-columns: 1fr; }
+      .primary-nav { gap: 24px; padding: 0 16px; overflow-x: auto; }
+      .site-header { padding: 0 16px; }
+      .header-search { width: 200px; }
+      .main { padding: 16px 20px; }
+      .footer-main { flex-direction: column; padding: 24px 24px 0; }
+      .footer-links { flex-direction: column; gap: 12px; padding: 16px 24px 20px; }
+    }
+  </style>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -529,6 +362,7 @@
       </button>
     </div>
   </header>
+
   <nav class="primary-nav" aria-label="Primary navigation">
     <a href="S04_dashboard.html">Home</a>
     <a href="S07_draft_applications.html">Applications</a>
@@ -537,10 +371,9 @@
     <a href="S26_referral_list.html">Referrals</a>
   </nav>
 
-  <!-- ── Main ── -->
-  <main id="main-content">
+  <main class="main" id="main-content">
 
-    <!-- OOTB: Breadcrumbs -->
+    <!-- Breadcrumb -->
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="S04_dashboard.html">Home</a>
       <span class="breadcrumb__sep" aria-hidden="true">›</span>
@@ -549,51 +382,62 @@
       <span class="breadcrumb__current" aria-current="page">Q-2024-003847 — Maria Tran</span>
     </nav>
 
-    <!-- OOTB: Record Detail — Highlights Panel -->
-    <div class="highlights-panel" role="region" aria-label="Grant file highlights">
-      <div class="highlights-avatar" aria-hidden="true">MT</div>
-      <div class="highlights-body">
-        <h1 class="highlights-name">Maria Tran</h1>
-        <p class="highlights-meta">Q-2024-003847 · Family law — parenting · Okafor Legal Pty Ltd</p>
-      </div>
-      <div class="highlights-right">
-        <div class="highlights-status">
-          <span class="status-dot-sm" aria-hidden="true"></span>
-          Active
+    <!-- Page header (S07 format) -->
+    <div class="list-header">
+      <div class="list-header-left">
+        <div class="list-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M4 3h8l4 4v11a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="#fff" stroke-width="1.25" fill="none"/>
+            <path d="M12 3v4h4" stroke="#fff" stroke-width="1.25"/>
+            <path d="M6 9h8M6 12h8M6 15h5" stroke="#fff" stroke-width="1.25" stroke-linecap="round"/>
+          </svg>
         </div>
-        <div class="highlights-scope">$4,500.00 approved</div>
-        <div class="highlights-conditions">
-          <a href="#">1 condition — Mediation required</a>
+        <div>
+          <p class="list-meta-label">Grant of Aid</p>
+          <div class="list-meta-title">
+            <h1>Q-2024-003847 — Maria Tran</h1>
+          </div>
+          <div class="list-meta-sub">
+            <span class="status-dot" aria-hidden="true"></span>
+            Active · Family law — parenting · $4,500.00 approved
+          </div>
+        </div>
+      </div>
+      <div class="list-header-right">
+        <div class="btn-group">
+          <button class="btn-primary-sm" type="button">Request extension</button>
+          <button class="btn-neutral-sm" type="button">Submit invoice</button>
+          <button class="btn-neutral-sm" type="button">Upload document</button>
+          <button class="btn-neutral-sm" type="button">Send message</button>
+        </div>
+        <div class="list-toolbar">
+          <button class="icon-btn" aria-label="Refresh" title="Refresh">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8A5 5 0 113 8a5 5 0 0110 0z" stroke="#706e6b" stroke-width="1.25" fill="none"/><path d="M13 3v5h-5" stroke="#706e6b" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="Print" title="Print">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="6" width="10" height="7" rx="1" stroke="#706e6b" stroke-width="1.25" fill="none"/><path d="M5 6V3h6v3" stroke="#706e6b" stroke-width="1.25"/><path d="M5 10h6" stroke="#706e6b" stroke-width="1" stroke-linecap="round"/><path d="M5 12h4" stroke="#706e6b" stroke-width="1" stroke-linecap="round"/></svg>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- OOTB: Record Actions -->
-    <div class="record-actions-bar" role="region" aria-label="File actions">
-      <button class="btn btn--primary" type="button">Request extension</button>
-      <button class="btn btn--neutral" type="button">Submit invoice</button>
-      <button class="btn btn--neutral" type="button">Upload document</button>
-      <button class="btn btn--neutral" type="button">Send message</button>
+    <!-- Tabs -->
+    <div class="slds-tabs" role="tablist" aria-label="Grant of Aid record sections">
+      <a href="#" class="slds-tabs__item is-active" role="tab" aria-selected="true" tabindex="0">Summary</a>
+      <a href="S12_correspondence.html" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Correspondence (3)</a>
+      <a href="S13_documents.html" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Documents (7)</a>
+      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Invoices (2)</a>
+      <a href="S14_outcomes.html" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Outcomes</a>
+      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Activity history (14)</a>
     </div>
 
-    <!-- OOTB: Record Detail — Tabs -->
-    <!-- A11Y: Production LWC must implement arrow-key navigation between tabs per ARIA tabs pattern -->
-    <div class="slds-tabs" role="tablist" aria-label="File sections">
-      <a href="#" class="slds-tabs__item is-active" role="tab" aria-selected="true" tabindex="0" id="tab-summary" aria-controls="panel-summary">Summary</a>
-      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1" id="tab-correspondence" aria-controls="panel-correspondence">Correspondence (3)</a>
-      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1" id="tab-documents" aria-controls="panel-documents">Documents (7)</a>
-      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1" id="tab-invoices" aria-controls="panel-invoices">Invoices (2)</a>
-      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1" id="tab-outcomes" aria-controls="panel-outcomes">Outcomes</a>
-      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1" id="tab-activity" aria-controls="panel-activity">Activity history (14)</a>
-    </div>
+    <!-- Two-column record content -->
+    <div class="record-content">
 
-    <!-- Two-column page content -->
-    <div class="page-content" role="tabpanel" id="panel-summary" aria-labelledby="tab-summary">
-
-      <!-- ── Main column ── -->
+      <!-- Main column -->
       <div>
 
-        <!-- OOTB: Record Form — Scope and commitment + Custom: LWC:ScopeBar -->
+        <!-- Scope and commitment -->
         <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Scope and commitment</h2>
@@ -630,43 +474,37 @@
           </div>
         </div>
 
-        <!-- OOTB: Related List — Grant conditions -->
+        <!-- Grant conditions -->
         <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Grant conditions</h2>
             <a href="#" class="slds-card__header-link">View all</a>
           </div>
-          <div class="slds-card__body" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
             <ul class="conditions-list" aria-label="Grant conditions">
               <li>
-                <span class="condition-icon">
+                <span style="flex-shrink:0;margin-top:2px;">
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c23934" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 </span>
                 <div>
                   <div class="condition-name">Mediation required</div>
-                  <div class="condition-status condition-status--action">
-                    <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-1px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    Pending — action required
-                  </div>
+                  <div class="condition-status condition-status--action">Pending — action required</div>
                 </div>
               </li>
               <li>
-                <span class="condition-icon">
+                <span style="flex-shrink:0;margin-top:2px;">
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2e844a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                 </span>
                 <div>
                   <div class="condition-name">Notice of address filed</div>
-                  <div class="condition-status">
-                    <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-1px;"><polyline points="20 6 9 17 4 12"/></svg>
-                    Met — 20 Nov 2024
-                  </div>
+                  <div class="condition-status">Met — 20 Nov 2024</div>
                 </div>
               </li>
             </ul>
           </div>
         </div>
 
-        <!-- OOTB: Record Form — Key dates -->
+        <!-- Key dates -->
         <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Key dates</h2>
@@ -687,10 +525,7 @@
               </div>
               <div class="record-field">
                 <span class="field-label">Mediation due</span>
-                <span class="field-value field-value--warning">
-                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:-1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  25 Apr 2025
-                </span>
+                <span class="field-value field-value--warning">25 Apr 2025</span>
               </div>
               <div class="record-field">
                 <span class="field-label">Grant closure target</span>
@@ -700,7 +535,7 @@
           </div>
         </div>
 
-        <!-- OOTB: Record Form — Assigned LAQ contact -->
+        <!-- Assigned LAQ contact -->
         <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Assigned LAQ contact</h2>
@@ -722,16 +557,16 @@
 
       </div><!-- /main column -->
 
-      <!-- ── Right rail ── -->
+      <!-- Right rail -->
       <div>
 
-        <!-- OOTB: Related List — Decision letters -->
+        <!-- Decision letters -->
         <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Decision letters</h2>
-            <a href="#" class="slds-card__header-link">View all</a>
+            <a href="S15_decision_letters.html" class="slds-card__header-link">View all</a>
           </div>
-          <div class="slds-card__body" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
             <ul class="rl-list" aria-label="Decision letters">
               <li>
                 <span class="rl-item-icon"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
@@ -739,7 +574,10 @@
                   <div class="rl-item-title">Scope extension approved</div>
                   <div class="rl-item-meta">18 Jan 2025</div>
                 </div>
-                <div class="rl-item-action"><a href="#" class="rl-pdf-link" aria-label="Download scope extension approved PDF"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF</a></div>
+                <a href="#" class="rl-pdf-link" aria-label="Download scope extension approved PDF">
+                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  PDF
+                </a>
               </li>
               <li>
                 <span class="rl-item-icon"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
@@ -747,7 +585,10 @@
                   <div class="rl-item-title">Grant of aid approved</div>
                   <div class="rl-item-meta">14 Nov 2024</div>
                 </div>
-                <div class="rl-item-action"><a href="#" class="rl-pdf-link" aria-label="Download grant of aid approved PDF"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF</a></div>
+                <a href="#" class="rl-pdf-link" aria-label="Download grant of aid approved PDF">
+                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  PDF
+                </a>
               </li>
               <li>
                 <span class="rl-item-icon"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
@@ -755,19 +596,22 @@
                   <div class="rl-item-title">Application acknowledged</div>
                   <div class="rl-item-meta">08 Nov 2024</div>
                 </div>
-                <div class="rl-item-action"><a href="#" class="rl-pdf-link" aria-label="Download application acknowledged PDF"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF</a></div>
+                <a href="#" class="rl-pdf-link" aria-label="Download application acknowledged PDF">
+                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  PDF
+                </a>
               </li>
             </ul>
           </div>
         </div>
 
-        <!-- OOTB: Related List — Assigned parties -->
+        <!-- Assigned parties -->
         <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Assigned parties</h2>
             <a href="#" class="slds-card__header-link">View all</a>
           </div>
-          <div class="slds-card__body" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
             <div role="list" aria-label="Assigned parties">
               <div class="party-row" role="listitem">
                 <div class="party-avatar" aria-hidden="true">JO</div>
@@ -794,13 +638,13 @@
           </div>
         </div>
 
-        <!-- OOTB: Related List — Recent notifications -->
+        <!-- Recent notifications -->
         <div class="slds-card">
           <div class="slds-card__header">
             <h2 class="slds-card__title">Recent notifications</h2>
             <a href="#" class="slds-card__header-link">View all</a>
           </div>
-          <div class="slds-card__body" style="padding-top:0.25rem;padding-bottom:0.25rem;">
+          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
             <div role="list" aria-label="Recent notifications">
               <div class="notif-row" role="listitem">
                 <div class="notif-text">Mediation condition is due in 1 day. Confirm completion or contact LAQ.</div>
@@ -820,7 +664,7 @@
 
       </div><!-- /right rail -->
 
-    </div><!-- /page-content -->
+    </div><!-- /record-content -->
 
   </main>
 
