@@ -162,7 +162,7 @@ var LAQ_US = (function () {
 
   // ── Public API ─────────────────────────────────────────────────────────
   function getForPage(filename) {
-    // Extract screen key: 'S04_dashboard.html' → 'S04', 'index.html' → 'index'
+    // Extract screen key: 'S04_home.html' → 'S04', 'index.html' → 'index'
     var base = filename.replace(/\.html$/i, '').replace(/.*\//, '');
     var key = base.match(/^(S\d+[a-z]*|index)/i);
     key = key ? key[1] : null;
