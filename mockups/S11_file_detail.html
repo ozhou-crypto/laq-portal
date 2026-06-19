@@ -1,31 +1,32 @@
 <!--
-  S11 — Grant of Aid Record (Summary View)
-  LWR Layout: Single-Column with two-column content grid
+  S11 — Grant of Aid Record (Detail View)
+  Layout: Two-Column — main accordion content (~65%) + Activity rail (~35%)
 
-  Layout follows S07 format: white background, standard SLDS page header
-  with icon, label, record title, action buttons and toolbar. Record content
-  is presented in cards below with a two-column grid (main + right rail).
+  Rebuilt to match the LSS Benefit record pattern from the internal screenshot.
+  The page chrome (accent strip, header, teal nav, breadcrumb, footer) follows
+  the standard LAQ portal template shared across all authenticated screens.
 
-  Component regions:
-  OOTB: Navigation Menu — standard EC header + teal nav bar
-  OOTB: Breadcrumbs — Home > My Grant of Aid > record
-  OOTB: Record Detail — page header with record name and action buttons
-  OOTB: Record Detail — Tabs on GrantFile__c — Summary, Correspondence, Documents, Invoices, Outcomes, Activity history
-  OOTB: Record Form — Scope and commitment fields in 2-column layout
-  OOTB: Related List — Grant conditions rows from GrantCondition__c
-  OOTB: Record Form — Key dates fields in 2-column layout
-  OOTB: Record Form — Assigned LAQ contact
-  OOTB: Related List — Decision letters (right rail)
-  OOTB: Related List — Assigned parties (right rail)
-  OOTB: Related List — Recent notifications (right rail)
-  Custom: LWC:ScopeBar — progress bar showing scope utilisation percentage
+  Record content mirrors the Benefit record layout exactly:
+  · Record header: object label + icon, title, compact highlight fields strip,
+    action button group with split-button dropdown
+  · Details / Related tabs (Details active)
+  · Three accordion sections: Grant of Aid Details (2-col inline-edit grid),
+    Description (clause wording + fee structure tables for Solicitors, Barristers
+    and Outlays), Grant Options (status / date fields)
+  · Right rail: Activity panel with coloured icon/chevron pairs, plain-text
+    filter line, Refresh · Expand All · View All toolbar, Upcoming & Overdue
+    section (empty state), info notice, Show All Activities CTA
+
+  Data lifted directly from the screenshot (High Court special leave to appeal).
+  Dates converted to Australian format (1 Apr 2026). No purple, no gradients,
+  no celebratory illustrations. WCAG 2.2 AA contrast throughout.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grant of Aid record — Q-2024-003847 — Maria Tran — LAQ Practitioner Portal</title>
+  <title>Grant of Aid — High Court of Australia special leave to appeal — LAQ Practitioner Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,7 +36,7 @@
       font-size: 1rem;
       line-height: 1.5;
       color: #181818;
-      background: #fff;
+      background: #f3f3f3;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -55,9 +56,9 @@
     .skip-link:focus { top: 0; }
 
     /* ── Cyan accent strip ── */
-    .accent-strip { height: 33px; background: rgba(71, 195, 211, 0.2); }
+    .accent-strip { height: 33px; background: rgba(71,195,211,0.2); }
 
-    /* ── White header ── */
+    /* ── Site header ── */
     .site-header {
       background: #fff; height: 97px;
       display: flex; align-items: center; justify-content: space-between;
@@ -74,11 +75,9 @@
       font-size: 1.125rem; font-family: inherit; color: #080707; width: 100%;
     }
     .header-search input::placeholder { color: #767676; }
-    .header-search input:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
     .header-bell {
       background: none; border: none; cursor: pointer;
       width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-      color: #3e3e3c; position: relative;
     }
     .header-bell:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
     .header-user {
@@ -88,7 +87,7 @@
     }
     .header-user:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
 
-    /* ── Teal primary nav bar ── */
+    /* ── Teal nav ── */
     .primary-nav {
       background: #0f8291; height: 56px;
       display: flex; align-items: center; padding: 0 49px; gap: 60px;
@@ -102,217 +101,269 @@
     .primary-nav a:hover { opacity: 0.85; }
     .primary-nav a:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
 
-    /* ── Main content ── */
-    .main {
-      flex: 1;
-      padding: 24px 59px;
-    }
-
     /* ── Breadcrumb ── */
     .breadcrumb {
-      display: flex; align-items: center; gap: 0.375rem;
+      background: #fff; padding: 8px 24px;
+      display: flex; align-items: center; gap: 6px;
       font-size: 0.8125rem; color: #595959;
-      margin-bottom: 16px;
+      border-bottom: 1px solid #e5e5e5;
     }
     .breadcrumb a { color: #005288; }
     .breadcrumb__sep { color: #b0adab; }
-    .breadcrumb__current { color: #595959; }
 
-    /* ── Page header (matches S07 style) ── */
-    .list-header {
+    /* ── Record header ── */
+    .record-header {
+      background: #fff;
+      padding: 14px 24px 0;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    .record-header__top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; padding-bottom: 12px;
+    }
+    .record-header__left { display: flex; align-items: flex-start; gap: 12px; }
+    .record-header__icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #e05c4a;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .record-header__object-label { font-size: 0.75rem; color: #595959; margin-bottom: 1px; }
+    .record-header__name { font-size: 1.375rem; font-weight: 700; color: #181818; line-height: 1.3; }
+
+    /* Action buttons */
+    .record-header__actions {
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding-top: 4px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; height: 32px; padding: 0 14px;
+      font-size: 0.8125rem; font-weight: 400; font-family: inherit;
+      border: 1px solid #dddbda; border-radius: 4px;
+      background: #fff; color: #181818; cursor: pointer; white-space: nowrap;
+    }
+    .btn:hover { background: #f3f3f3; }
+    .btn:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+    .btn--split-start { border-radius: 4px 0 0 4px; }
+    .btn--split-end {
+      padding: 0 10px;
+      border-left: 1px solid #c9c9c9;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ── Compact highlight fields strip ── */
+    .compact-fields {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 12px;
+      border-top: 1px solid #e5e5e5;
+      overflow-x: auto;
     }
-    .list-header-left {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
+    .compact-field {
+      display: flex; flex-direction: column; gap: 1px;
+      padding: 8px 24px 10px 0;
+      border-right: 1px solid #e5e5e5;
+      min-width: 80px; flex-shrink: 0;
     }
-    .list-icon {
-      width: 36px; height: 36px;
-      background: #0f8291;
-      border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; margin-top: 2px;
+    .compact-field + .compact-field { padding-left: 20px; }
+    .compact-field:last-child { border-right: none; }
+    .compact-field__label {
+      font-size: 0.6875rem; color: #595959; text-transform: uppercase;
+      letter-spacing: 0.04em; line-height: 1.3;
     }
-    .list-meta-label { font-size: 0.8125rem; color: #080707; margin-bottom: 2px; }
-    .list-meta-title { display: flex; align-items: center; gap: 8px; }
-    .list-meta-title h1 { font-size: 1.125rem; font-weight: 700; color: #080707; }
-    .list-meta-sub {
-      font-size: 0.8125rem; color: #595959; margin-top: 4px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .status-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: #2e844a;
-      display: inline-block; flex-shrink: 0;
-    }
-
-    /* Header right: action buttons */
-    .list-header-right {
-      display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
-    }
-    .btn-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-    .btn-primary-sm {
-      display: inline-flex; align-items: center; height: 32px; padding: 0 16px;
-      font-size: 0.8125rem; font-weight: 700; color: #fff;
-      background: #05325F; border: 1px solid #05325F;
-      border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap;
-    }
-    .btn-primary-sm:hover { background: #09549F; border-color: #09549F; }
-    .btn-primary-sm:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
-    .btn-neutral-sm {
-      display: inline-flex; align-items: center; height: 32px; padding: 0 16px;
-      font-size: 0.8125rem; font-weight: 400; color: #005288;
-      background: #fff; border: 1px solid #dddbda;
-      border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap;
-    }
-    .btn-neutral-sm:hover { background: #f3f3f3; }
-    .btn-neutral-sm:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
-
-    /* Toolbar */
-    .list-toolbar {
-      display: flex; align-items: center; gap: 4px;
-    }
-    .icon-btn {
-      width: 32px; height: 32px;
-      background: #fff; border: 1px solid #dddbda; border-radius: 4px;
-      display: inline-flex; align-items: center; justify-content: center;
-      cursor: pointer; flex-shrink: 0;
-    }
-    .icon-btn:hover { background: #f3f3f3; }
-    .icon-btn:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
+    .compact-field__value { font-size: 0.875rem; color: #181818; }
+    .compact-field__value a { color: #005288; }
+    .compact-field__value--blank { color: #b0adab; }
 
     /* ── Tabs ── */
     .slds-tabs {
-      border-bottom: 1px solid #dddbda;
-      display: flex; gap: 0;
-      overflow-x: auto;
-      margin-bottom: 16px;
+      background: #fff; display: flex; padding: 0 24px;
+      border-bottom: 1px solid #dddbda; overflow-x: auto;
     }
     .slds-tabs__item {
-      padding: 10px 16px;
-      font-size: 0.9375rem; color: #595959;
+      padding: 10px 12px; font-size: 0.9375rem; color: #595959;
       cursor: pointer; border-bottom: 2px solid transparent;
-      margin-bottom: -1px; white-space: nowrap; text-decoration: none; display: block;
+      margin-bottom: -1px; white-space: nowrap;
+      text-decoration: none; display: block;
     }
     .slds-tabs__item:hover { color: #181818; }
-    .slds-tabs__item:focus-visible { outline: 2px solid #05325F; outline-offset: -2px; }
     .slds-tabs__item.is-active { color: #05325F; font-weight: 600; border-bottom-color: #05325F; }
+    .slds-tabs__item:focus-visible { outline: 2px solid #05325F; outline-offset: -2px; }
 
-    /* ── Two-column content grid ── */
-    .record-content {
+    /* ── Page body two-column ── */
+    .page-body {
       display: grid;
-      grid-template-columns: 1fr 20rem;
-      gap: 1rem;
+      grid-template-columns: 1fr 23rem;
+      gap: 0;
       align-items: start;
+      padding: 12px 0 48px;
     }
+    .page-main { padding: 0 12px; }
+    .page-rail { padding: 0 12px 0 0; }
 
-    /* ── Cards ── */
-    .slds-card {
-      background: #fff; border: 1px solid #dddbda;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-      border-radius: 4px; margin-bottom: 12px;
+    /* ── Accordion ── */
+    .accordion {
+      background: #fff; border: 1px solid #e5e5e5;
+      border-radius: 4px; margin-bottom: 10px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
-    .slds-card:last-child { margin-bottom: 0; }
-    .slds-card__header {
-      padding: 10px 16px 8px; border-bottom: 1px solid #e5e5e5;
-      display: flex; align-items: center; justify-content: space-between;
+    .accordion__header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px; cursor: pointer;
+      background: none; border: none; width: 100%;
+      text-align: left; font-family: inherit;
+      border-bottom: 1px solid #e5e5e5;
     }
-    .slds-card__title { font-size: 0.9375rem; font-weight: 700; color: #181818; }
-    .slds-card__header-link { font-size: 0.875rem; color: #005288; text-decoration: none; }
-    .slds-card__header-link:hover { text-decoration: underline; }
-    .slds-card__body { padding: 12px 16px; }
+    .accordion__header:hover { background: #fafafa; }
+    .accordion__header:focus-visible { outline: 2px solid #005288; outline-offset: -2px; border-radius: 4px; }
+    .accordion__chevron {
+      width: 12px; height: 12px; color: #706e6b; flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .accordion__header[aria-expanded="false"] .accordion__chevron { transform: rotate(-90deg); }
+    .accordion__title { font-size: 0.9375rem; font-weight: 700; color: #181818; }
 
-    /* ── Record form fields ── */
+    /* ── Record form: 2-col inline-edit grid ── */
     .record-form {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 12px 24px;
+      border-top: 1px solid #e5e5e5;
     }
-    .record-field { display: flex; flex-direction: column; gap: 2px; }
-    .field-label { font-size: 0.75rem; font-weight: 600; color: #595959; text-transform: uppercase; letter-spacing: 0.04em; }
-    .field-value { font-size: 0.9375rem; color: #181818; }
-    .field-value--warning { color: #c23934; }
+    .record-field {
+      padding: 8px 16px;
+      border-bottom: 1px solid #f3f3f3;
+      position: relative;
+    }
+    .record-field:nth-child(odd) { border-right: 1px solid #e5e5e5; }
+    .field-label { font-size: 0.75rem; color: #595959; line-height: 1.3; margin-bottom: 2px; }
+    .field-value-row { display: flex; align-items: center; gap: 6px; min-height: 1.4rem; }
+    .field-value { font-size: 0.875rem; color: #181818; }
+    .field-value a { color: #005288; }
+    .field-check { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
+    .field-edit-btn {
+      width: 20px; height: 20px; display: inline-flex; align-items: center;
+      justify-content: center; background: none; border: none;
+      color: #706e6b; cursor: pointer; border-radius: 2px; flex-shrink: 0;
+      opacity: 0; transition: opacity 0.15s; margin-left: auto;
+    }
+    .record-field:hover .field-edit-btn { opacity: 1; }
+    .field-edit-btn--visible { opacity: 1; }
+    .field-edit-btn:hover { background: #f3f2f2; }
+    .field-edit-btn:focus { opacity: 1; outline: 2px solid #005288; outline-offset: 1px; }
 
-    /* ── Scope bar (Custom LWC:ScopeBar) ── */
-    .scope-bar-wrap { margin-top: 12px; }
-    .scope-bar-track { width: 100%; height: 8px; border-radius: 4px; background: #e5e5e5; overflow: hidden; }
-    .scope-bar-fill { width: 72%; height: 100%; background: #05325F; border-radius: 4px; }
-    .scope-bar-label {
-      font-size: 0.8125rem; color: #595959; margin-top: 4px;
-      display: flex; align-items: center; gap: 4px;
-    }
-    .scope-bar-label--warning { color: #e07b00; }
+    /* ── Description body ── */
+    .desc-body { padding: 0 16px 16px; }
+    .desc-outer-label { font-size: 0.75rem; color: #595959; display: block; padding-top: 10px; margin-bottom: 4px; }
+    .desc-edit-row { display: flex; align-items: flex-start; justify-content: space-between; }
+    .desc-subheading { font-size: 0.9375rem; font-weight: 700; color: #181818; margin: 2px 0 4px; }
+    .desc-text { font-size: 0.875rem; color: #181818; line-height: 1.6; margin-bottom: 12px; }
 
-    /* ── Conditions list ── */
-    .conditions-list { list-style: none; }
-    .conditions-list li {
-      display: flex; align-items: flex-start; gap: 10px;
-      padding: 8px 0; border-bottom: 1px solid #f3f3f3; font-size: 0.9375rem;
+    /* Fee tables */
+    .fee-section { margin-top: 16px; }
+    .fee-section + .fee-section { border-top: 1px solid #e5e5e5; padding-top: 16px; }
+    .fee-section__heading { font-size: 0.9375rem; font-weight: 700; color: #181818; margin-bottom: 2px; }
+    .fee-structure-label { font-size: 0.8125rem; font-weight: 700; color: #181818; margin-bottom: 1px; }
+    .fee-structure-sublabel { font-size: 0.8125rem; color: #595959; margin-bottom: 8px; }
+    .fee-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .fee-table thead th {
+      text-align: left; font-size: 0.8125rem; font-weight: 600; color: #005288;
+      padding: 4px 0 5px; border-bottom: 1px solid #e5e5e5;
     }
-    .conditions-list li:last-child { border-bottom: none; }
-    .condition-name { color: #181818; font-weight: 600; }
-    .condition-status { font-size: 0.8125rem; color: #595959; margin-top: 2px; }
-    .condition-status--action { color: #c23934; }
+    .fee-table thead th:last-child { text-align: right; }
+    .fee-table tbody td { padding: 7px 0; color: #181818; border-bottom: 1px solid #f3f3f3; }
+    .fee-table tbody td:last-child { text-align: right; }
+    .fee-table__total-row td {
+      background: #3d5a70; color: #fff; font-weight: 600;
+      padding: 7px 8px; border-bottom: none;
+    }
+    .fee-table__total-row td:first-child { padding-left: 8px; }
+    .fee-table__total-row td:last-child { text-align: right; }
 
-    /* ── Contact row ── */
-    .contact-row { display: flex; align-items: center; gap: 12px; }
-    .contact-avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: #b0adab; color: #fff; font-size: 0.6875rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    /* ── Activity rail ── */
+    .activity-panel {
+      background: #fff; border: 1px solid #e5e5e5;
+      border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
-    .contact-name { font-size: 0.9375rem; font-weight: 600; color: #181818; }
-    .contact-role { font-size: 0.8125rem; color: #595959; }
-    .contact-actions { display: flex; gap: 12px; margin-top: 2px; }
-    .contact-action-link { font-size: 0.8125rem; color: #005288; text-decoration: none; }
-    .contact-action-link:hover { text-decoration: underline; }
+    .activity-panel__heading {
+      font-size: 0.9375rem; font-weight: 700; color: #181818;
+      padding: 12px 16px 8px;
+    }
 
-    /* ── Related list rows ── */
-    .rl-list { list-style: none; }
-    .rl-list li {
-      display: flex; align-items: flex-start; gap: 8px;
-      padding: 8px 0; border-bottom: 1px solid #f3f3f3;
+    /* Icon bar */
+    .activity-icon-bar {
+      display: flex; align-items: center;
+      padding: 4px 16px 10px; border-bottom: 1px solid #f3f3f3;
+      gap: 6px; flex-wrap: wrap;
     }
-    .rl-list li:last-child { border-bottom: none; }
-    .rl-item-icon { color: #595959; flex-shrink: 0; margin-top: 2px; }
-    .rl-item-body { flex: 1; min-width: 0; }
-    .rl-item-title { font-size: 0.9375rem; color: #181818; }
-    .rl-item-meta { font-size: 0.8125rem; color: #595959; }
-    .rl-pdf-link {
-      font-size: 0.8125rem; color: #005288; text-decoration: none;
-      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    .icon-pair { display: inline-flex; align-items: stretch; }
+    .act-icon-btn {
+      width: 28px; height: 28px; border-radius: 50% 0 0 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; cursor: pointer;
     }
-    .rl-pdf-link:hover { text-decoration: underline; }
+    .act-icon-btn--purple { background: #7f5af0; }
+    .act-icon-btn--green  { background: #2e844a; }
+    .act-icon-btn--teal   { background: #0085B3; }
+    .act-icon-btn--grey   { background: #706e6b; }
+    .act-chev-btn {
+      width: 18px; height: 28px; border-radius: 0 50% 50% 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; cursor: pointer;
+    }
+    .act-chev-btn--purple { background: #6b49d6; }
+    .act-chev-btn--green  { background: #236636; }
+    .act-chev-btn--teal   { background: #006e94; }
+    .act-chev-btn--grey   { background: #595959; }
+    .act-icon-btn:focus-visible,
+    .act-chev-btn:focus-visible { outline: 2px solid #005288; outline-offset: 2px; }
 
-    /* ── Party rows ── */
-    .party-row {
+    /* Filters / toolbar */
+    .activity-filters-text {
+      padding: 5px 16px 3px;
+      font-size: 0.75rem; color: #706e6b;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .activity-toolbar {
+      padding: 2px 16px 6px;
       display: flex; align-items: center; gap: 8px;
-      padding: 8px 0; border-bottom: 1px solid #f3f3f3; font-size: 0.9375rem;
+      border-bottom: 1px solid #f3f3f3;
     }
-    .party-row:last-child { border-bottom: none; }
-    .party-avatar {
-      width: 24px; height: 24px; border-radius: 50%;
-      background: #b0adab; color: #fff; font-size: 0.5625rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .party-name { font-weight: 600; color: #181818; }
-    .party-role { font-size: 0.8125rem; color: #595959; }
+    .activity-toolbar a { font-size: 0.75rem; color: #005288; text-decoration: none; }
+    .activity-toolbar a:hover { text-decoration: underline; }
+    .activity-toolbar__sep { color: #b0adab; font-size: 0.75rem; }
 
-    /* ── Notification rows ── */
-    .notif-row { padding: 8px 0; border-bottom: 1px solid #f3f3f3; font-size: 0.9375rem; }
-    .notif-row:last-child { border-bottom: none; }
-    .notif-text { color: #181818; line-height: 1.4; }
-    .notif-time { font-size: 0.8125rem; color: #595959; margin-top: 2px; }
+    /* Timeline */
+    .timeline-section-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px; font-size: 0.8125rem; font-weight: 600; color: #181818;
+      background: none; border: none; cursor: pointer; width: 100%;
+      text-align: left; font-family: inherit;
+    }
+    .timeline-section-btn:hover { background: #fafafa; }
+    .timeline-section-btn:focus-visible { outline: 2px solid #005288; outline-offset: -2px; }
+    .timeline-empty {
+      padding: 10px 16px 14px; font-size: 0.8125rem; color: #706e6b;
+      text-align: center; line-height: 1.5;
+    }
+    .timeline-info {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 12px; background: #f3f2f2;
+      border-top: 1px solid #e5e5e5;
+      font-size: 0.75rem; color: #3e3e3c;
+    }
+    .timeline-show-all {
+      padding: 12px 16px; border-top: 1px solid #e5e5e5; text-align: center;
+    }
+    .btn-blue {
+      display: inline-block; background: #0176D3; color: #fff;
+      border: none; border-radius: 4px; padding: 6px 20px;
+      font-size: 0.8125rem; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .btn-blue:hover { background: #014486; }
+    .btn-blue:focus-visible { outline: 2px solid #005288; outline-offset: 2px; border-radius: 4px; }
 
     /* ── Footer ── */
-    .site-footer { background: #daf3f6; }
+    .site-footer { background: #daf3f6; margin-top: auto; }
     .footer-main { display: flex; justify-content: space-between; padding: 40px 77px 0; gap: 40px; }
     .footer-col-primary { max-width: 528px; }
     .footer-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
     .footer-body { font-size: 1rem; color: #181818; line-height: 1.5625; }
-    .footer-col-visit { min-width: 160px; }
     .footer-col-heading { font-size: 1.125rem; font-weight: 700; color: #005288; margin-bottom: 8px; }
     .footer-address { font-size: 1rem; color: #181818; line-height: 1.5625; }
     .footer-more-link { display: inline-block; margin-top: 12px; font-size: 1rem; color: #181818; text-decoration: underline; }
@@ -321,48 +372,39 @@
     .footer-links { display: flex; gap: 88px; padding: 16px 77px 20px; }
     .footer-links a { font-size: 1rem; color: #181818; text-decoration: underline; }
 
-    @media (max-width: 900px) {
-      .record-content { grid-template-columns: 1fr; }
+    @media (max-width: 960px) {
+      .page-body { grid-template-columns: 1fr; }
+      .record-form { grid-template-columns: 1fr; }
+      .record-field:nth-child(odd) { border-right: none; }
       .primary-nav { gap: 24px; padding: 0 16px; overflow-x: auto; }
-      .site-header { padding: 0 16px; }
-      .header-search { width: 200px; }
-      .main { padding: 16px 20px; }
-      .footer-main { flex-direction: column; padding: 24px 24px 0; }
-      .footer-links { flex-direction: column; gap: 12px; padding: 16px 24px 20px; }
     }
   </style>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="accent-strip" aria-hidden="true"></div>
+
+  <!-- ── Site header ── -->
   <header class="site-header">
     <a href="S04_home.html" class="site-logo" aria-label="Legal Aid Queensland Practitioner Portal home">
-      <svg width="180" height="41" viewBox="0 0 180 40.6695" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g><path d="M65.6779 31.117V26.9237H55.0397V5.25391H50.0764V31.117H65.6779Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M82.6784 29.3522L80.9434 25.7881C79.2527 26.845 78.5456 27.199 77.4383 27.5136C76.7369 27.7267 76.0067 27.8312 75.273 27.8233C74.4581 27.84 73.6522 27.6469 72.9341 27.2628C72.2164 26.8786 71.6103 26.3165 71.1751 25.6308C70.74 24.8885 70.6215 24.2592 70.5421 22.7303H82.6784V20.7344C82.6784 15.8184 79.5296 12.3772 74.9962 12.3772C69.7564 12.3772 65.8162 16.7279 65.8162 22.4845C65.8162 28.0494 69.2422 31.6185 74.6798 31.6185C76.7608 31.624 78.8183 31.1812 80.711 30.3206C81.1412 30.1289 81.8134 29.829 82.6883 29.3374L82.6784 29.3522ZM77.9475 19.7906H70.7794C71.1751 17.3325 72.5889 15.9118 74.6798 15.9118C76.8846 15.9118 77.834 17.0081 77.9475 19.7906Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M101.919 16.423V12.8982L98.2109 13.1342H95.4923C94.2801 12.6377 92.9817 12.3837 91.6709 12.387C86.8261 12.387 83.8306 15.0514 83.8306 19.3972C83.8055 21.0326 84.3801 22.6211 85.4468 23.8659C85.9283 24.3989 86.471 24.8741 87.0634 25.2817C86.5693 25.67 86.1588 25.906 85.9215 26.1027C84.1469 27.2776 83.5188 28.0985 83.5188 29.1555C83.5188 30.2124 84.2654 30.9596 86.0799 31.6135C83.9491 33.4127 83.163 34.627 83.163 36.0379C83.163 38.7809 86.1983 40.6246 90.6919 40.6246C96.8316 40.6246 101.246 37.3308 101.246 32.7835C101.246 29.8339 99.5506 28.3984 95.9666 28.3984H89.5401C88.6355 28.3984 88.3192 28.2804 88.3192 27.9068C88.3192 27.4152 88.9124 26.8499 90.1333 25.9404C90.5734 26.0334 91.0234 26.073 91.473 26.0584C96.273 26.0584 99.5111 23.2759 99.5111 19.1219C99.5715 18.1505 99.2768 17.1901 98.6806 16.4181L101.919 16.423ZM94.7062 19.1661C94.7062 21.0441 93.3664 22.5386 91.6709 22.5386C89.9753 22.5386 88.6405 21.0637 88.6405 19.2055C88.6405 17.3473 89.9802 15.7643 91.6314 15.7643C93.2825 15.7643 94.7062 17.2932 94.7062 19.176V19.1661ZM96.8316 33.3488C96.8316 34.0567 96.3376 34.8777 95.4528 35.5463C94.2976 36.4532 92.8705 36.9499 91.399 36.9572C89.2287 36.9572 87.5331 36.0526 87.5331 34.917C87.5331 34.4254 87.8495 33.7421 88.4031 32.8376C88.5577 32.6446 88.6906 32.4352 88.7988 32.2132H94.5083C96.0854 32.2132 96.8316 32.6065 96.8316 33.3488Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M118.217 27.8232C116.957 27.7101 116.759 27.4299 116.759 25.788V18.1878C116.759 14.1911 114.782 12.387 110.411 12.387C105.468 12.387 102.611 14.2305 102.611 17.4406C102.596 17.8723 102.677 18.302 102.848 18.6991L107.342 17.7159C107.272 17.5609 107.231 17.3941 107.223 17.2243C107.223 16.3247 108.365 15.5775 109.784 15.5775C111.321 15.5775 112.028 16.482 112.028 18.4386V19.9674L106.827 21.4422C104.148 22.2288 103.046 23.0891 102.418 24.7753C102.214 25.3673 102.107 25.9881 102.101 26.6139C102.101 29.5143 104.306 31.5545 107.416 31.5545C109.27 31.5545 110.807 30.8859 112.542 29.3177C113.368 30.9252 114.119 31.3185 116.497 31.3185H117.486L118.237 27.7888L118.217 27.8232ZM112.028 26.5746C111.65 26.8888 111.241 27.1639 110.807 27.3955C110.219 27.7313 109.557 27.9186 108.879 27.9412C108.625 27.9646 108.369 27.9321 108.129 27.846C107.889 27.76 107.671 27.6225 107.49 27.4433C107.309 27.2641 107.171 27.0476 107.083 26.8091C106.996 26.5706 106.963 26.316 106.986 26.0633C106.995 25.5345 107.116 25.0136 107.342 24.5344L112.028 23.0055V26.5746Z" fill="#005288"/><path d="M123.902 31.1169V2.55005H119.211V31.1169H123.902Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M155.555 31.117L146.138 5.25879H141.689L132.271 31.117H137.477L139.602 24.7262H148.308L150.36 31.117H155.555ZM146.964 20.5377H140.932L143.928 11.1727L146.964 20.5377Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M161.329 6.35028C161.329 4.59034 160.148 3.17944 158.689 3.17944C157.231 3.17944 156.01 4.59034 156.01 6.35028C156.01 8.11021 157.231 9.52601 158.689 9.52601C160.148 9.52601 161.329 8.11512 161.329 6.35028ZM161.013 31.1171V12.8984H156.327V31.1171H161.013Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M179.768 31.1169V2.55005H175.082V13.6406C174.371 13.0776 173.53 12.7007 172.635 12.5443C172.11 12.4039 171.567 12.3377 171.023 12.3476C166.174 12.3476 162.273 16.895 162.273 22.5385C162.273 27.7839 165.467 31.6282 169.797 31.6282C171.016 31.6228 172.206 31.2696 173.228 30.6106C174.014 30.1349 174.655 29.455 175.082 28.6442V31.1022L179.768 31.1169ZM175.082 25.0457C173.935 26.8056 172.477 27.7839 171.023 27.7839C168.774 27.7839 167.242 25.4734 167.242 22.1846C167.242 18.7434 169.17 16.187 171.77 16.187C173.228 16.187 174.528 16.895 174.845 17.8733C175.014 18.6448 175.094 19.4334 175.082 20.2231V25.0457Z" fill="#005288"/><path d="M21.0039 1.18353C21.9185 -0.39451 23.4164 -0.39451 24.3309 1.18353L26.6049 5.11634C27.0571 6.0048 27.2927 6.98659 27.2927 7.98234C27.2927 8.97813 27.0571 9.95995 26.6049 10.8484L17.2123 27.0368C16.3027 28.6148 17.0492 29.9028 18.8783 29.9028H37.6634C38.662 29.9604 39.6338 30.2489 40.5004 30.7457C41.3673 31.2424 42.1056 31.9335 42.6562 32.7639L44.9305 36.6968C45.8449 38.2746 45.0983 39.5628 43.2695 39.5628H2.05563C0.226549 39.5628 -0.524859 38.2746 0.389681 36.6968L21.0039 1.18353Z" fill="#005288"/><path d="M37.9106 25.09C38.6719 26.4025 38.0491 27.4791 36.5265 27.4791H22.9121C21.3846 27.4791 20.7617 26.4025 21.523 25.09L28.3302 13.3653C29.0915 12.0527 30.3372 12.0527 31.1034 13.3653L37.9106 25.09Z" fill="#47C3D3"/><path d="M109.364 40.6196C109.23 40.6574 109.092 40.6736 108.953 40.6687C108.838 40.6691 108.723 40.6543 108.612 40.6245C108.506 40.5943 108.402 40.5584 108.301 40.5161C108.211 40.4787 108.123 40.4361 108.039 40.3885C107.959 40.3394 107.895 40.3001 107.836 40.2707C107.687 40.177 107.51 40.0788 107.292 39.9704C107.07 39.8606 106.838 39.7703 106.6 39.7004C106.208 39.7125 105.816 39.6491 105.448 39.5135C105.129 39.3847 104.848 39.1767 104.633 38.9089C104.158 38.3149 103.911 37.5727 103.935 36.8146C103.921 36.258 104.044 35.7064 104.291 35.207C104.506 34.7708 104.851 34.4118 105.28 34.1796C105.469 34.0838 105.67 34.0144 105.878 33.9731C106.096 33.9276 106.318 33.9045 106.541 33.9043C106.913 33.8975 107.283 33.9644 107.628 34.1009C107.944 34.2286 108.227 34.4233 108.459 34.6712C108.691 34.9347 108.868 35.2424 108.978 35.5757C109.102 35.96 109.162 36.3619 109.156 36.7654C109.171 37.3136 109.061 37.8579 108.835 38.3583C108.642 38.7616 108.339 39.1023 107.959 39.3413C108.055 39.3764 108.148 39.4191 108.236 39.4693L108.498 39.6166C108.614 39.6778 108.735 39.7306 108.859 39.7741C108.985 39.8232 109.119 39.8481 109.255 39.8477C109.377 39.8477 109.499 39.8394 109.62 39.8232H109.793L109.472 40.5754L109.364 40.6196ZM107.732 36.0575C107.712 35.8703 107.673 35.6857 107.613 35.5069C107.585 35.4257 107.547 35.3482 107.5 35.2759C107.442 35.1897 107.372 35.1119 107.292 35.0448C107.196 34.9713 107.089 34.9117 106.976 34.8678C106.838 34.8162 106.692 34.7912 106.546 34.7941C106.35 34.7913 106.156 34.837 105.982 34.9268C105.822 35.0108 105.689 35.1366 105.597 35.2906C105.367 35.7684 105.262 36.2957 105.29 36.8244C105.29 37.8077 105.473 38.4025 105.834 38.6385C106.05 38.7771 106.304 38.8455 106.56 38.8349C106.746 38.8485 106.932 38.8096 107.097 38.7224C107.261 38.6355 107.397 38.5041 107.49 38.3436C107.712 37.8568 107.809 37.323 107.772 36.79C107.772 36.5453 107.759 36.3007 107.732 36.0575Z" fill="#47C3D3"/><path d="M117.298 38.3241C117.293 38.3803 117.283 38.4362 117.268 38.491L117.214 38.6583C117.163 38.7859 117.093 38.9056 117.006 39.0121C116.897 39.1488 116.765 39.2655 116.616 39.3561C116.425 39.4728 116.219 39.5604 116.002 39.6167C115.724 39.69 115.436 39.7251 115.147 39.7202C114.738 39.7311 114.331 39.6662 113.946 39.5283C113.643 39.4226 113.382 39.2247 113.199 38.963C113.147 38.8981 113.102 38.8271 113.066 38.7515C113.031 38.6794 113.004 38.6035 112.987 38.5253C112.967 38.4347 112.954 38.3429 112.947 38.25C112.947 38.1469 112.947 38.0291 112.947 37.9011V33.9683H114.218V37.675C114.217 37.8146 114.225 37.9543 114.243 38.0929C114.255 38.1817 114.282 38.2682 114.322 38.3486C114.409 38.4834 114.533 38.591 114.679 38.6598C114.825 38.7285 114.987 38.7553 115.147 38.7368C115.372 38.7478 115.594 38.6858 115.78 38.5597C115.86 38.5034 115.927 38.4302 115.976 38.3452C116.024 38.2602 116.054 38.1658 116.062 38.0684C116.065 38.0389 116.065 38.0091 116.062 37.9796C116.064 37.9502 116.064 37.9207 116.062 37.8913V33.9585H117.303V38.0831C117.308 38.1632 117.306 38.244 117.298 38.3241Z" fill="#47C3D3"/><path d="M121.371 33.9783H124.831L124.673 34.9074H122.592V36.2003H124.317V37.1294H122.592V38.6388H124.891V39.6218H121.371V33.9783Z" fill="#47C3D3"/><path d="M128.589 33.9783H132.049L131.891 34.9074H129.81V36.2003H131.535V37.1294H129.81V38.6388H132.108V39.6218H128.584L128.589 33.9783Z" fill="#47C3D3"/><path d="M137.724 37.4539C137.635 37.2769 137.546 37.1 137.462 36.9181L137.22 36.397L137.017 35.9496C136.968 35.812 136.923 35.7038 136.894 35.6153C136.894 35.7284 136.918 35.8513 136.923 35.9889C136.928 36.1266 136.923 36.2593 136.923 36.4019C136.923 36.5445 136.923 36.6821 136.923 36.8197C136.923 36.9574 136.923 37.0852 136.923 37.2032L136.958 39.6119H135.811V33.9783H137.145L138.312 36.2298C138.461 36.5395 138.594 36.8296 138.708 37.1049C138.822 37.3802 138.911 37.626 138.975 37.8276C138.975 37.7194 138.95 37.5965 138.94 37.4588C138.93 37.3212 138.94 37.1835 138.911 37.036C138.881 36.8886 138.911 36.7558 138.886 36.6231C138.861 36.4904 138.886 36.3773 138.886 36.279L138.861 33.9783H140.043V39.6119H138.757L137.724 37.4539Z" fill="#47C3D3"/><path d="M148.125 38.6141C148.005 38.8463 147.836 39.051 147.631 39.2138C147.393 39.3894 147.125 39.5208 146.84 39.602C146.504 39.6941 146.156 39.7387 145.807 39.7349C145.448 39.7338 145.091 39.6892 144.744 39.602C144.401 39.517 144.069 39.3916 143.755 39.2285L144.21 38.3486C144.471 38.4808 144.742 38.5922 145.021 38.6828C145.3 38.7644 145.59 38.8044 145.881 38.8006C146.593 38.8006 146.949 38.545 146.949 38.0291C146.949 37.6799 146.682 37.4341 146.153 37.3014L145.476 37.1293C145.217 37.0678 144.967 36.9719 144.734 36.8442C144.549 36.7399 144.392 36.5911 144.279 36.4116C144.132 36.1791 144.047 35.9135 144.03 35.6394C144.014 35.3653 144.067 35.0915 144.185 34.8434C144.29 34.6275 144.442 34.4377 144.63 34.2879C144.835 34.1287 145.068 34.0087 145.317 33.9339C145.604 33.846 145.902 33.8029 146.202 33.8061C146.572 33.8051 146.939 33.8547 147.295 33.9536C147.628 34.042 147.944 34.1813 148.234 34.3665L147.656 35.1678C147.418 35.0309 147.166 34.9204 146.904 34.8385C146.687 34.7715 146.46 34.7383 146.232 34.7401C146.013 34.7315 145.797 34.7955 145.619 34.922C145.545 34.9754 145.484 35.0456 145.443 35.1269C145.402 35.2081 145.381 35.298 145.381 35.389C145.378 35.453 145.388 35.5171 145.412 35.5766C145.436 35.6361 145.473 35.6896 145.52 35.7332C145.679 35.8503 145.864 35.9279 146.059 35.9593L146.796 36.1461C147.233 36.2321 147.635 36.4481 147.947 36.7655C148.211 37.0578 148.351 37.44 148.338 37.8324C148.33 38.1058 148.257 38.3739 148.125 38.6141Z" fill="#47C3D3"/><path d="M152.05 39.6119V33.9783H153.316V38.6829H155.496L155.273 39.6119H152.05Z" fill="#47C3D3"/><path d="M162.066 38.2746H160.281L159.851 39.6118H158.576L160.553 33.9585H161.873L163.791 39.6118H162.476L162.066 38.2746ZM161.73 37.2424C161.73 37.1736 161.68 37.0851 161.651 36.9769C161.621 36.8688 161.581 36.7459 161.542 36.6131C161.502 36.4804 161.468 36.3427 161.433 36.2051C161.398 36.0674 161.394 36.0576 161.364 35.9495L161.285 35.6152C161.268 35.5187 161.245 35.4235 161.215 35.3301L161.191 35.2072L161.156 35.3252C161.156 35.394 161.117 35.4824 161.082 35.5955C161.048 35.7086 161.027 35.8217 160.993 35.9495C160.958 36.0773 160.929 36.1953 160.899 36.2936C160.845 36.5001 160.79 36.682 160.746 36.8294C160.701 36.9769 160.642 37.1539 160.578 37.3211H161.769L161.73 37.2424Z" fill="#47C3D3"/><path d="M169.184 37.4539C169.095 37.2769 169.006 37.1 168.922 36.9181L168.68 36.397L168.478 35.9496C168.428 35.812 168.388 35.7038 168.354 35.6153C168.354 35.7284 168.379 35.8513 168.383 35.9889C168.388 36.1266 168.383 36.2593 168.383 36.4019C168.383 36.5445 168.383 36.6821 168.383 36.8197C168.383 36.9574 168.383 37.0852 168.383 37.2032L168.418 39.6119H167.237V33.9783H168.591L169.758 36.2298C169.906 36.5395 170.04 36.8296 170.153 37.1049C170.267 37.3802 170.356 37.626 170.42 37.8276C170.42 37.7194 170.395 37.5965 170.385 37.4588C170.376 37.3212 170.385 37.1835 170.356 37.036C170.326 36.8886 170.356 36.7558 170.331 36.6231C170.306 36.4904 170.331 36.3773 170.331 36.279L170.302 33.9783H171.483V39.6119H170.198L169.184 37.4539Z" fill="#47C3D3"/><path d="M179.398 38.7713C179.215 38.999 178.99 39.1894 178.735 39.3317C178.487 39.4745 178.21 39.5602 177.924 39.5825L177.539 39.607H175.561V33.9783H177.351C177.549 33.9783 177.716 33.9783 177.845 33.9783C178.091 33.9981 178.333 34.0544 178.562 34.1454C178.787 34.2381 178.994 34.3715 179.17 34.5387C179.447 34.8003 179.66 35.1215 179.793 35.4777C179.939 35.8979 180.008 36.3409 179.996 36.7853C180.033 37.4962 179.822 38.1981 179.398 38.7713ZM178.592 36.0233C178.558 35.781 178.474 35.5482 178.345 35.34C178.252 35.1921 178.122 35.0703 177.969 34.9861C177.782 34.9002 177.577 34.8597 177.371 34.8681H176.807V38.6879H177.47C177.643 38.7015 177.817 38.669 177.975 38.5938C178.132 38.5187 178.266 38.4035 178.364 38.26C178.585 37.8503 178.684 37.3867 178.651 36.923C178.653 36.6221 178.633 36.3214 178.592 36.0233Z" fill="#47C3D3"/></g></svg>
+      <svg width="180" height="41" viewBox="0 0 180 40.6695" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g><path d="M65.6779 31.117V26.9237H55.0397V5.25391H50.0764V31.117H65.6779Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M82.6784 29.3522L80.9434 25.7881C79.2527 26.845 78.5456 27.199 77.4383 27.5136C76.7369 27.7267 76.0067 27.8312 75.273 27.8233C74.4581 27.84 73.6522 27.6469 72.9341 27.2628C72.2164 26.8786 71.6103 26.3165 71.1751 25.6308C70.74 24.8885 70.6215 24.2592 70.5421 22.7303H82.6784V20.7344C82.6784 15.8184 79.5296 12.3772 74.9962 12.3772C69.7564 12.3772 65.8162 16.7279 65.8162 22.4845C65.8162 28.0494 69.2422 31.6185 74.6798 31.6185C76.7608 31.624 78.8183 31.1812 80.711 30.3206C81.1412 30.1289 81.8134 29.829 82.6883 29.3374L82.6784 29.3522ZM77.9475 19.7906H70.7794C71.1751 17.3325 72.5889 15.9118 74.6798 15.9118C76.8846 15.9118 77.834 17.0081 77.9475 19.7906Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M101.919 16.423V12.8982L98.2109 13.1342H95.4923C94.2801 12.6377 92.9817 12.3837 91.6709 12.387C86.8261 12.387 83.8306 15.0514 83.8306 19.3972C83.8055 21.0326 84.3801 22.6211 85.4468 23.8659C85.9283 24.3989 86.471 24.8741 87.0634 25.2817C86.5693 25.67 86.1588 25.906 85.9215 26.1027C84.1469 27.2776 83.5188 28.0985 83.5188 29.1555C83.5188 30.2124 84.2654 30.9596 86.0799 31.6135C83.9491 33.4127 83.163 34.627 83.163 36.0379C83.163 38.7809 86.1983 40.6246 90.6919 40.6246C96.8316 40.6246 101.246 37.3308 101.246 32.7835C101.246 29.8339 99.5506 28.3984 95.9666 28.3984H89.5401C88.6355 28.3984 88.3192 28.2804 88.3192 27.9068C88.3192 27.4152 88.9124 26.8499 90.1333 25.9404C90.5734 26.0334 91.0234 26.073 91.473 26.0584C96.273 26.0584 99.5111 23.2759 99.5111 19.1219C99.5715 18.1505 99.2768 17.1901 98.6806 16.4181L101.919 16.423ZM94.7062 19.1661C94.7062 21.0441 93.3664 22.5386 91.6709 22.5386C89.9753 22.5386 88.6405 21.0637 88.6405 19.2055C88.6405 17.3473 89.9802 15.7643 91.6314 15.7643C93.2825 15.7643 94.7062 17.2932 94.7062 19.176V19.1661ZM96.8316 33.3488C96.8316 34.0567 96.3376 34.8777 95.4528 35.5463C94.2976 36.4532 92.8705 36.9499 91.399 36.9572C89.2287 36.9572 87.5331 36.0526 87.5331 34.917C87.5331 34.4254 87.8495 33.7421 88.4031 32.8376C88.5577 32.6446 88.6906 32.4352 88.7988 32.2132H94.5083C96.0854 32.2132 96.8316 32.6065 96.8316 33.3488Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M118.217 27.8232C116.957 27.7101 116.759 27.4299 116.759 25.788V18.1878C116.759 14.1911 114.782 12.387 110.411 12.387C105.468 12.387 102.611 14.2305 102.611 17.4406C102.596 17.8723 102.677 18.302 102.848 18.6991L107.342 17.7159C107.272 17.5609 107.231 17.3941 107.223 17.2243C107.223 16.3247 108.365 15.5775 109.784 15.5775C111.321 15.5775 112.028 16.482 112.028 18.4386V19.9674L106.827 21.4422C104.148 22.2288 103.046 23.0891 102.418 24.7753C102.214 25.3673 102.107 25.9881 102.101 26.6139C102.101 29.5143 104.306 31.5545 107.416 31.5545C109.27 31.5545 110.807 30.8859 112.542 29.3177C113.368 30.9252 114.119 31.3185 116.497 31.3185H117.486L118.237 27.7888L118.217 27.8232ZM112.028 26.5746C111.65 26.8888 111.241 27.1639 110.807 27.3955C110.219 27.7313 109.557 27.9186 108.879 27.9412C108.625 27.9646 108.369 27.9321 108.129 27.846C107.889 27.76 107.671 27.6225 107.49 27.4433C107.309 27.2641 107.171 27.0476 107.083 26.8091C106.996 26.5706 106.963 26.316 106.986 26.0633C106.995 25.5345 107.116 25.0136 107.342 24.5344L112.028 23.0055V26.5746Z" fill="#005288"/><path d="M123.902 31.1169V2.55005H119.211V31.1169H123.902Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M155.555 31.117L146.138 5.25879H141.689L132.271 31.117H137.477L139.602 24.7262H148.308L150.36 31.117H155.555ZM146.964 20.5377H140.932L143.928 11.1727L146.964 20.5377Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M161.329 6.35028C161.329 4.59034 160.148 3.17944 158.689 3.17944C157.231 3.17944 156.01 4.59034 156.01 6.35028C156.01 8.11021 157.231 9.52601 158.689 9.52601C160.148 9.52601 161.329 8.11512 161.329 6.35028ZM161.013 31.1171V12.8984H156.327V31.1171H161.013Z" fill="#005288"/><path fill-rule="evenodd" clip-rule="evenodd" d="M179.768 31.1169V2.55005H175.082V13.6406C174.371 13.0776 173.53 12.7007 172.635 12.5443C172.11 12.4039 171.567 12.3377 171.023 12.3476C166.174 12.3476 162.273 16.895 162.273 22.5385C162.273 27.7839 165.467 31.6282 169.797 31.6282C171.016 31.6228 172.206 31.2696 173.228 30.6106C174.014 30.1349 174.655 29.455 175.082 28.6442V31.1022L179.768 31.1169ZM175.082 25.0457C173.935 26.8056 172.477 27.7839 171.023 27.7839C168.774 27.7839 167.242 25.4734 167.242 22.1846C167.242 18.7434 169.17 16.187 171.77 16.187C173.228 16.187 174.528 16.895 174.845 17.8733C175.014 18.6448 175.094 19.4334 175.082 20.2231V25.0457Z" fill="#005288"/><path d="M21.0039 1.18353C21.9185 -0.39451 23.4164 -0.39451 24.3309 1.18353L26.6049 5.11634C27.0571 6.0048 27.2927 6.98659 27.2927 7.98234C27.2927 8.97813 27.0571 9.95995 26.6049 10.8484L17.2123 27.0368C16.3027 28.6148 17.0492 29.9028 18.8783 29.9028H37.6634C38.662 29.9604 39.6338 30.2489 40.5004 30.7457C41.3673 31.2424 42.1056 31.9335 42.6562 32.7639L44.9305 36.6968C45.8449 38.2746 45.0983 39.5628 43.2695 39.5628H2.05563C0.226549 39.5628 -0.524859 38.2746 0.389681 36.6968L21.0039 1.18353Z" fill="#005288"/><path d="M37.9106 25.09C38.6719 26.4025 38.0491 27.4791 36.5265 27.4791H22.9121C21.3846 27.4791 20.7617 26.4025 21.523 25.09L28.3302 13.3653C29.0915 12.0527 30.3372 12.0527 31.1034 13.3653L37.9106 25.09Z" fill="#47C3D3"/></g></svg>
     </a>
     <div class="header-right">
       <div class="header-search" role="search">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <circle cx="9" cy="9" r="6" stroke="#080707" stroke-width="1.5"/>
-          <path d="M13.5 13.5l3 3" stroke="#080707" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="#080707" stroke-width="1.5"/><path d="M13.5 13.5l3 3" stroke="#080707" stroke-width="1.5" stroke-linecap="round"/></svg>
         <input type="search" placeholder="Search..." aria-label="Search portal" />
       </div>
       <button class="header-bell" aria-label="Notifications">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 3a7 7 0 00-7 7v4L3 17h18l-2-3v-4a7 7 0 00-7-7z" stroke="#3e3e3c" stroke-width="1.5" fill="none"/>
-          <path d="M10 18a2 2 0 004 0" stroke="#3e3e3c" stroke-width="1.5" fill="none"/>
-          <circle cx="18" cy="6" r="4" fill="#005288"/>
-        </svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3a7 7 0 00-7 7v4L3 17h18l-2-3v-4a7 7 0 00-7-7z" stroke="#3e3e3c" stroke-width="1.5" fill="none"/><path d="M10 18a2 2 0 004 0" stroke="#3e3e3c" stroke-width="1.5" fill="none"/><circle cx="18" cy="6" r="4" fill="#005288"/></svg>
       </button>
       <button class="header-user" aria-label="User menu — Lucas" aria-haspopup="true">
         Lucas
-        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
-          <path d="M1 1l5 5 5-5" stroke="#005288" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="#005288" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
   </header>
 
+  <!-- ── Primary nav ── -->
   <nav class="primary-nav" aria-label="Primary navigation">
     <a href="S04_home.html">Home</a>
     <a href="S07_draft_applications.html">Applications</a>
@@ -371,310 +413,391 @@
     <a href="S26_referral_list.html">Referrals</a>
   </nav>
 
-  <main class="main" id="main-content">
+  <main id="main-content">
 
-    <!-- Breadcrumb -->
+    <!-- ── Breadcrumb ── -->
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="S04_home.html">Home</a>
       <span class="breadcrumb__sep" aria-hidden="true">›</span>
       <a href="S10_my_files.html">My Grant of Aid</a>
       <span class="breadcrumb__sep" aria-hidden="true">›</span>
-      <span class="breadcrumb__current" aria-current="page">Q-2024-003847 — Maria Tran</span>
+      <span aria-current="page">High Court of Australia special leave to appeal</span>
     </nav>
 
-    <!-- Page header (S07 format) -->
-    <div class="list-header">
-      <div class="list-header-left">
-        <div class="list-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M4 3h8l4 4v11a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="#fff" stroke-width="1.25" fill="none"/>
-            <path d="M12 3v4h4" stroke="#fff" stroke-width="1.25"/>
-            <path d="M6 9h8M6 12h8M6 15h5" stroke="#fff" stroke-width="1.25" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <p class="list-meta-label">Grant of Aid</p>
-          <div class="list-meta-title">
-            <h1>Q-2024-003847 — Maria Tran</h1>
+    <!-- ── Record header ── -->
+    <div class="record-header" role="region" aria-label="Grant of Aid record header">
+      <div class="record-header__top">
+        <div class="record-header__left">
+          <div class="record-header__icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           </div>
-          <div class="list-meta-sub">
-            <span class="status-dot" aria-hidden="true"></span>
-            Active · Family law — parenting · $4,500.00 approved
+          <div>
+            <div class="record-header__object-label">Grant of Aid</div>
+            <h1 class="record-header__name">High Court of Australia special leave to appeal</h1>
+          </div>
+        </div>
+
+        <!-- Action buttons: New Note / New Benefit Schedule / New Ad Hoc split -->
+        <div class="record-header__actions" role="group" aria-label="Record actions">
+          <button class="btn" type="button">New Note</button>
+          <button class="btn" type="button">New Benefit Schedule</button>
+          <div style="display:inline-flex;align-items:stretch;">
+            <button class="btn btn--split-start" type="button">New Ad Hoc Bulk Disbursement</button>
+            <button class="btn btn--split-end" type="button" aria-label="More actions" aria-haspopup="true">
+              <svg width="10" height="7" viewBox="0 0 12 8" fill="none" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="#181818" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
           </div>
         </div>
       </div>
-      <div class="list-header-right">
-        <div class="btn-group">
-          <button class="btn-primary-sm" type="button">Request extension</button>
-          <button class="btn-neutral-sm" type="button">Submit invoice</button>
-          <button class="btn-neutral-sm" type="button">Upload document</button>
-          <button class="btn-neutral-sm" type="button">Send message</button>
+
+      <!-- Compact highlight fields — matches screenshot column order exactly -->
+      <div class="compact-fields" role="region" aria-label="Grant of Aid summary fields">
+        <div class="compact-field">
+          <span class="compact-field__label">Value</span>
+          <span class="compact-field__value compact-field__value--blank">—</span>
         </div>
-        <div class="list-toolbar">
-          <button class="icon-btn" aria-label="Refresh" title="Refresh">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8A5 5 0 113 8a5 5 0 0110 0z" stroke="#706e6b" stroke-width="1.25" fill="none"/><path d="M13 3v5h-5" stroke="#706e6b" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-          </button>
-          <button class="icon-btn" aria-label="Print" title="Print">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="6" width="10" height="7" rx="1" stroke="#706e6b" stroke-width="1.25" fill="none"/><path d="M5 6V3h6v3" stroke="#706e6b" stroke-width="1.25"/><path d="M5 10h6" stroke="#706e6b" stroke-width="1" stroke-linecap="round"/><path d="M5 12h4" stroke="#706e6b" stroke-width="1" stroke-linecap="round"/></svg>
-          </button>
+        <div class="compact-field">
+          <span class="compact-field__label">Unit of Measure</span>
+          <span class="compact-field__value"><a href="#">Per Day</a></span>
+        </div>
+        <div class="compact-field">
+          <span class="compact-field__label">Benefit Type</span>
+          <span class="compact-field__value"><a href="#">LAQ Clause Codes</a></span>
+        </div>
+        <div class="compact-field">
+          <span class="compact-field__label">Start Date</span>
+          <span class="compact-field__value">1 Apr 2026, 12:00 PM</span>
+        </div>
+        <div class="compact-field">
+          <span class="compact-field__label">End Date</span>
+          <span class="compact-field__value compact-field__value--blank">—</span>
+        </div>
+        <div class="compact-field">
+          <span class="compact-field__label">Benefit Status</span>
+          <span class="compact-field__value">Active</span>
         </div>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="slds-tabs" role="tablist" aria-label="Grant of Aid record sections">
-      <a href="#" class="slds-tabs__item is-active" role="tab" aria-selected="true" tabindex="0">Summary</a>
-      <a href="S12_correspondence.html" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Correspondence (3)</a>
-      <a href="S13_documents.html" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Documents (7)</a>
-      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Invoices (2)</a>
-      <a href="S14_outcomes.html" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Outcomes</a>
-      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Activity history (14)</a>
+    <!-- ── Tabs ── -->
+    <div class="slds-tabs" role="tablist" aria-label="Grant of Aid record tabs">
+      <a href="#" class="slds-tabs__item is-active" role="tab" aria-selected="true" tabindex="0">Details</a>
+      <a href="#" class="slds-tabs__item" role="tab" aria-selected="false" tabindex="-1">Related</a>
     </div>
 
-    <!-- Two-column record content -->
-    <div class="record-content">
+    <!-- ── Two-column body ── -->
+    <div class="page-body">
 
       <!-- Main column -->
-      <div>
+      <div class="page-main">
 
-        <!-- Scope and commitment -->
-        <div class="slds-card">
-          <div class="slds-card__header">
-            <h2 class="slds-card__title">Scope and commitment</h2>
-          </div>
-          <div class="slds-card__body">
+        <!-- ── Accordion: Grant of Aid Details ── -->
+        <div class="accordion">
+          <button class="accordion__header" type="button" aria-expanded="true" aria-controls="acc-details">
+            <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="accordion__title">Grant of Aid Details</span>
+          </button>
+          <div id="acc-details">
             <div class="record-form">
+
+              <!-- Row 1: Program / Benefit Name -->
               <div class="record-field">
-                <span class="field-label">Approved scope</span>
-                <span class="field-value">$4,500.00</span>
+                <div class="field-label">Program</div>
+                <div class="field-value-row">
+                  <span class="field-value"><a href="#">LAQ</a></span>
+                  <button class="field-edit-btn" aria-label="Edit Program" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
               <div class="record-field">
-                <span class="field-label">Committed to date</span>
-                <span class="field-value">$3,240.00</span>
+                <div class="field-label">Benefit Name</div>
+                <div class="field-value-row">
+                  <span class="field-value">High Court of Australia special leave to appeal</span>
+                  <button class="field-edit-btn" aria-label="Edit Benefit Name" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Row 2: Active / Clause Code -->
+              <div class="record-field">
+                <div class="field-label">Active</div>
+                <div class="field-value-row">
+                  <span class="field-check" aria-label="Active: yes">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#181818" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <button class="field-edit-btn" aria-label="Edit Active" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
               <div class="record-field">
-                <span class="field-label">Remaining</span>
-                <span class="field-value">$1,260.00</span>
+                <div class="field-label">Clause Code</div>
+                <div class="field-value-row">
+                  <span class="field-value">A1</span>
+                  <button class="field-edit-btn" aria-label="Edit Clause Code" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Row 3: Benefit Type ID / Area of Law -->
+              <div class="record-field">
+                <div class="field-label">Benefit Type ID</div>
+                <div class="field-value-row">
+                  <span class="field-value"><a href="#">LAQ Clause Codes</a></span>
+                  <button class="field-edit-btn" aria-label="Edit Benefit Type ID" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
               <div class="record-field">
-                <span class="field-label">Scope status</span>
-                <span class="field-value">Within scope</span>
+                <div class="field-label">Area of Law</div>
+                <div class="field-value-row">
+                  <span class="field-value">Civil Law</span>
+                  <button class="field-edit-btn" aria-label="Edit Area of Law" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
-            </div>
-            <!-- Custom: LWC:ScopeBar -->
-            <div class="scope-bar-wrap" role="img" aria-label="Scope utilisation: 72% used ($3,240 of $4,500)">
-              <div class="scope-bar-track">
-                <div class="scope-bar-fill"></div>
+
+              <!-- Row 4: Unit of Measure / Clause Type -->
+              <div class="record-field">
+                <div class="field-label">Unit of Measure</div>
+                <div class="field-value-row">
+                  <span class="field-value">Per Day</span>
+                  <button class="field-edit-btn" aria-label="Edit Unit of Measure" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
-              <p class="scope-bar-label scope-bar-label--warning">
-                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                72% used — consider requesting an extension if additional work is required
-              </p>
+              <div class="record-field">
+                <div class="field-label">Clause Type</div>
+                <div class="field-value-row">
+                  <span class="field-value">Approval</span>
+                  <button class="field-edit-btn" aria-label="Edit Clause Type" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
 
-        <!-- Grant conditions -->
-        <div class="slds-card">
-          <div class="slds-card__header">
-            <h2 class="slds-card__title">Grant conditions</h2>
-            <a href="#" class="slds-card__header-link">View all</a>
-          </div>
-          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
-            <ul class="conditions-list" aria-label="Grant conditions">
-              <li>
-                <span style="flex-shrink:0;margin-top:2px;">
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c23934" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                </span>
-                <div>
-                  <div class="condition-name">Mediation required</div>
-                  <div class="condition-status condition-status--action">Pending — action required</div>
-                </div>
-              </li>
-              <li>
-                <span style="flex-shrink:0;margin-top:2px;">
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2e844a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                </span>
-                <div>
-                  <div class="condition-name">Notice of address filed</div>
-                  <div class="condition-status">Met — 20 Nov 2024</div>
-                </div>
-              </li>
-            </ul>
+        <!-- ── Accordion: Description ── -->
+        <div class="accordion">
+          <button class="accordion__header" type="button" aria-expanded="true" aria-controls="acc-desc">
+            <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="accordion__title">Description</span>
+          </button>
+          <div class="desc-body" id="acc-desc">
+
+            <div>
+              <div class="desc-edit-row">
+                <span class="desc-outer-label">Description</span>
+                <button class="field-edit-btn field-edit-btn--visible" style="margin-top:8px;" aria-label="Edit description" type="button">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                </button>
+              </div>
+              <p class="desc-subheading">Solicitor clause wording</p>
+              <p class="desc-text">Represent your client in relation to an application for special leave to appeal to the High Court. This is a maximum fee grant of aid (including agent's fees). Claims can be made up to the maximum fees. Proforma accounts for solicitor and barrister are enclosed. Reasonable outlays will be paid. Receipts should be retained on file. The maximum fee payable on this invoice for disbursements is $500.00 (A1).</p>
+              <p class="desc-subheading">Client clause wording</p>
+              <p class="desc-text">Be represented in an application for special leave to appeal to the High Court.</p>
+            </div>
+
+            <!-- Solicitors fee structure -->
+            <div class="fee-section">
+              <p class="fee-section__heading">Solicitors</p>
+              <p class="fee-structure-label">Fee Structure 1</p>
+              <p class="fee-structure-sublabel">Solicitors Fee Structure 1</p>
+              <table class="fee-table" aria-label="Solicitors fee structure">
+                <thead>
+                  <tr><th scope="col">Work Type</th><th scope="col">Fee</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>All Work On Clause</td><td>$1,683.00</td></tr>
+                  <tr class="fee-table__total-row"><td>Total</td><td>$1,683.00</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Barristers fee structure -->
+            <div class="fee-section">
+              <p class="fee-section__heading">Barristers</p>
+              <p class="fee-structure-label">Fee Structure 1</p>
+              <p class="fee-structure-sublabel">Barristers Fee Structure 1</p>
+              <table class="fee-table" aria-label="Barristers fee structure">
+                <thead>
+                  <tr><th scope="col">Work Type</th><th scope="col">Fee</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Fee On Brief</td><td>$1,883.00</td></tr>
+                  <tr class="fee-table__total-row"><td>Total</td><td>$1,883.00</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Outlays -->
+            <div class="fee-section">
+              <p class="fee-section__heading">Outlays</p>
+              <p class="fee-structure-sublabel">Outlays</p>
+              <table class="fee-table" aria-label="Outlays">
+                <thead>
+                  <tr><th scope="col">Work Type</th><th scope="col">Fee</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Total disbursements</td><td>$500.00</td></tr>
+                </tbody>
+              </table>
+            </div>
+
           </div>
         </div>
 
-        <!-- Key dates -->
-        <div class="slds-card">
-          <div class="slds-card__header">
-            <h2 class="slds-card__title">Key dates</h2>
-          </div>
-          <div class="slds-card__body">
+        <!-- ── Accordion: Grant Options (= Benefit Options in screenshot) ── -->
+        <div class="accordion">
+          <button class="accordion__header" type="button" aria-expanded="true" aria-controls="acc-options">
+            <svg class="accordion__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="accordion__title">Grant Options</span>
+          </button>
+          <div id="acc-options">
             <div class="record-form">
+
               <div class="record-field">
-                <span class="field-label">Grant approved</span>
-                <span class="field-value">14 Nov 2024</span>
+                <div class="field-label">Grant Status</div>
+                <div class="field-value-row">
+                  <span class="field-value">Active</span>
+                  <button class="field-edit-btn" aria-label="Edit Grant Status" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
+
               <div class="record-field">
-                <span class="field-label">Scope review</span>
-                <span class="field-value">30 Jun 2025</span>
+                <div class="field-label">End Date</div>
+                <div class="field-value-row">
+                  <span class="field-value compact-field__value--blank">—</span>
+                  <button class="field-edit-btn" aria-label="Edit End Date" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
+
               <div class="record-field">
-                <span class="field-label">Next hearing</span>
-                <span class="field-value">02 May 2025</span>
+                <div class="field-label">Start Date</div>
+                <div class="field-value-row">
+                  <span class="field-value">1 Apr 2026, 12:00 PM</span>
+                  <button class="field-edit-btn" aria-label="Edit Start Date" type="button">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  </button>
+                </div>
               </div>
-              <div class="record-field">
-                <span class="field-label">Mediation due</span>
-                <span class="field-value field-value--warning">25 Apr 2025</span>
-              </div>
-              <div class="record-field">
-                <span class="field-label">Grant closure target</span>
-                <span class="field-value">30 Sep 2025</span>
-              </div>
+
+              <!-- empty cell to keep grid balanced -->
+              <div class="record-field" style="border-bottom:none;"></div>
+
             </div>
           </div>
         </div>
 
-        <!-- Assigned LAQ contact -->
-        <div class="slds-card">
-          <div class="slds-card__header">
-            <h2 class="slds-card__title">Assigned LAQ contact</h2>
+      </div><!-- /page-main -->
+
+      <!-- ── Activity rail ── -->
+      <div class="page-rail">
+        <div class="activity-panel" role="region" aria-label="Activity timeline">
+
+          <h2 class="activity-panel__heading">Activity</h2>
+
+          <!-- Coloured icon + chevron pairs -->
+          <div class="activity-icon-bar" role="group" aria-label="Log activity">
+            <span class="icon-pair">
+              <button class="act-icon-btn act-icon-btn--purple" type="button" aria-label="New task">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              <button class="act-chev-btn act-chev-btn--purple" type="button" aria-label="More task options" aria-haspopup="true">
+                <svg width="7" height="5" viewBox="0 0 10 7" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+            </span>
+            <span class="icon-pair">
+              <button class="act-icon-btn act-icon-btn--green" type="button" aria-label="New email">
+                <svg width="13" height="10" viewBox="0 0 24 18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="16" rx="2"/><polyline points="2,4 12,11 22,4"/></svg>
+              </button>
+              <button class="act-chev-btn act-chev-btn--green" type="button" aria-label="More email options" aria-haspopup="true">
+                <svg width="7" height="5" viewBox="0 0 10 7" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+            </span>
+            <span class="icon-pair">
+              <button class="act-icon-btn act-icon-btn--teal" type="button" aria-label="Log a call">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.45 2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.92a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16c.01.307.01.614 0 .92z"/></svg>
+              </button>
+              <button class="act-chev-btn act-chev-btn--teal" type="button" aria-label="More call options" aria-haspopup="true">
+                <svg width="7" height="5" viewBox="0 0 10 7" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+            </span>
+            <span class="icon-pair">
+              <button class="act-icon-btn act-icon-btn--grey" type="button" aria-label="New event">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </button>
+              <button class="act-chev-btn act-chev-btn--grey" type="button" aria-label="More event options" aria-haspopup="true">
+                <svg width="7" height="5" viewBox="0 0 10 7" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+            </span>
           </div>
-          <div class="slds-card__body">
-            <div class="contact-row">
-              <div class="contact-avatar" aria-hidden="true">EW</div>
-              <div>
-                <div class="contact-name">Emma Watkins</div>
-                <div class="contact-role">Grants Officer — Family Law Unit</div>
-                <div class="contact-actions">
-                  <a href="#" class="contact-action-link">Email</a>
-                  <a href="#" class="contact-action-link">Send message</a>
-                </div>
-              </div>
-            </div>
+
+          <!-- Filters + gear -->
+          <div class="activity-filters-text">
+            <span>Filters: All time · All activities · All types</span>
+            <button type="button" style="background:none;border:none;cursor:pointer;color:#706e6b;display:flex;align-items:center;padding:0;" aria-label="Activity filter settings">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
           </div>
+
+          <!-- Toolbar -->
+          <div class="activity-toolbar">
+            <a href="#">Refresh</a>
+            <span class="activity-toolbar__sep">·</span>
+            <a href="#">Expand All</a>
+            <span class="activity-toolbar__sep">·</span>
+            <a href="#">View All</a>
+          </div>
+
+          <!-- Upcoming & Overdue section -->
+          <button class="timeline-section-btn" type="button" aria-expanded="true" aria-controls="timeline-upcoming">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            Upcoming &amp; Overdue
+          </button>
+          <div id="timeline-upcoming" class="timeline-empty" aria-live="polite">
+            No activities to show.<br>Get started by sending an email, scheduling a task, and more.
+          </div>
+
+          <!-- Info notice -->
+          <div class="timeline-info" role="note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#706e6b" stroke-width="2" aria-hidden="true" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>To change what's shown, try changing your filters.</span>
+          </div>
+
+          <!-- Show All Activities CTA -->
+          <div class="timeline-show-all">
+            <button class="btn-blue" type="button">Show All Activities</button>
+          </div>
+
         </div>
+      </div><!-- /page-rail -->
 
-      </div><!-- /main column -->
-
-      <!-- Right rail -->
-      <div>
-
-        <!-- Decision letters -->
-        <div class="slds-card">
-          <div class="slds-card__header">
-            <h2 class="slds-card__title">Decision letters</h2>
-            <a href="S15_decision_letters.html" class="slds-card__header-link">View all</a>
-          </div>
-          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
-            <ul class="rl-list" aria-label="Decision letters">
-              <li>
-                <span class="rl-item-icon"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-                <div class="rl-item-body">
-                  <div class="rl-item-title">Scope extension approved</div>
-                  <div class="rl-item-meta">18 Jan 2025</div>
-                </div>
-                <a href="#" class="rl-pdf-link" aria-label="Download scope extension approved PDF">
-                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  PDF
-                </a>
-              </li>
-              <li>
-                <span class="rl-item-icon"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-                <div class="rl-item-body">
-                  <div class="rl-item-title">Grant of aid approved</div>
-                  <div class="rl-item-meta">14 Nov 2024</div>
-                </div>
-                <a href="#" class="rl-pdf-link" aria-label="Download grant of aid approved PDF">
-                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  PDF
-                </a>
-              </li>
-              <li>
-                <span class="rl-item-icon"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-                <div class="rl-item-body">
-                  <div class="rl-item-title">Application acknowledged</div>
-                  <div class="rl-item-meta">08 Nov 2024</div>
-                </div>
-                <a href="#" class="rl-pdf-link" aria-label="Download application acknowledged PDF">
-                  <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  PDF
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Assigned parties -->
-        <div class="slds-card">
-          <div class="slds-card__header">
-            <h2 class="slds-card__title">Assigned parties</h2>
-            <a href="#" class="slds-card__header-link">View all</a>
-          </div>
-          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
-            <div role="list" aria-label="Assigned parties">
-              <div class="party-row" role="listitem">
-                <div class="party-avatar" aria-hidden="true">JO</div>
-                <div>
-                  <div class="party-name">James Okafor</div>
-                  <div class="party-role">Solicitor</div>
-                </div>
-              </div>
-              <div class="party-row" role="listitem">
-                <div class="party-avatar" aria-hidden="true">LC</div>
-                <div>
-                  <div class="party-name">Lindy Chen</div>
-                  <div class="party-role">Support staff</div>
-                </div>
-              </div>
-              <div class="party-row" role="listitem">
-                <div class="party-avatar" aria-hidden="true">RD</div>
-                <div>
-                  <div class="party-name">Robert Dunne SC</div>
-                  <div class="party-role">Barrister</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent notifications -->
-        <div class="slds-card">
-          <div class="slds-card__header">
-            <h2 class="slds-card__title">Recent notifications</h2>
-            <a href="#" class="slds-card__header-link">View all</a>
-          </div>
-          <div class="slds-card__body" style="padding-top:4px;padding-bottom:4px;">
-            <div role="list" aria-label="Recent notifications">
-              <div class="notif-row" role="listitem">
-                <div class="notif-text">Mediation condition is due in 1 day. Confirm completion or contact LAQ.</div>
-                <div class="notif-time">24 Apr 2026, 8:30 am</div>
-              </div>
-              <div class="notif-row" role="listitem">
-                <div class="notif-text">Scope utilisation has reached 72%. Consider submitting an extension request.</div>
-                <div class="notif-time">22 Apr 2026, 3:14 pm</div>
-              </div>
-              <div class="notif-row" role="listitem">
-                <div class="notif-text">Decision letter issued: Scope extension approved ($500.00 additional).</div>
-                <div class="notif-time">18 Jan 2025, 10:02 am</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /right rail -->
-
-    </div><!-- /record-content -->
+    </div><!-- /page-body -->
 
   </main>
 
+  <!-- ── Footer ── -->
   <footer class="site-footer">
     <div class="footer-main">
       <div class="footer-col-primary">
         <p class="footer-heading">Welcome to the Legal Aid Queensland Practitioner Portal!</p>
         <p class="footer-body">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
       </div>
-      <div class="footer-col-visit">
+      <div>
         <p class="footer-col-heading">Visit us</p>
         <p class="footer-address">Head office<br>44 Herschel Street<br>Brisbane Qld 4000</p>
         <a href="#" class="footer-more-link">More contact details</a>
@@ -697,9 +820,9 @@
     </div>
   </footer>
 
-<script src="userstories-data.js"></script>
-<script src="userstories-panel.js"></script>
-<script src="password.js"></script>
-<script src="usermenu.js"></script>
+  <script src="userstories-data.js"></script>
+  <script src="userstories-panel.js"></script>
+  <script src="password.js"></script>
+  <script src="usermenu.js"></script>
 </body>
 </html>
