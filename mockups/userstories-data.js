@@ -53,8 +53,7 @@ var LAQ_US = (function () {
     },
     'FR-BI-311': {
       role: 'In-house Practitioner, Solicitor, CLC and FDRP',
-      text: 'I want to use context-based search functionality, including predictive text, so that I can complete my searches for clients or documents faster.',
-      global: true
+      text: 'I want to use context-based search functionality, including predictive text, so that I can complete my searches for clients or documents faster.'
     },
     'FR-BI-312': {
       role: 'In-house Solicitor, CLC',
@@ -138,18 +137,18 @@ var LAQ_US = (function () {
   // Keys match the filename prefix (e.g. 'S01' matches S01_signin_mfa.html).
   // '_all' is appended to every screen.
   var screens = {
-    '_all':  ['FR-BI-311', 'FR-BI-305'],
+    '_all':  ['FR-BI-305'],
     'S01':   ['FR-BI-302', 'FR-BI-302-A', 'FR-BI-303'],
     'S01b':  ['FR-BI-302', 'FR-BI-302-A', 'FR-BI-303'],
     'S03':   ['#160'],
-    'S04':   ['FR-BI-310-A'],
+    'S04':   ['FR-BI-310-A', 'FR-BI-311'],
     'S06':   ['FR-BI-070', 'FR-BI-276', 'FR-BI-312', 'FR-BI-314', 'FR-BI-315', 'FR-BI-316', 'FR-BI-317', 'FR-BI-319', 'FR-BI-320', 'FR-BI-410'],
     'S07':   ['FR-BI-314'],
     'S07b':  ['FR-BI-324'],
     'S08':   ['FR-BI-410'],
     'S09':   ['FR-BI-313', 'FR-BI-330'],
     'S10':   ['FR-BI-308'],
-    'S11':   ['FR-BI-311', 'FR-BI-323', 'FR-BI-321', 'FR-BI-325'],
+    'S11':   ['FR-BI-323', 'FR-BI-321', 'FR-BI-325'],
     'S12':   ['FR-BI-318', 'FR-BI-321', 'FR-BI-326'],
     'S13':   ['FR-BI-319', 'FR-BI-320'],
     'S15':   ['FR-BI-315', 'FR-BI-326'],
