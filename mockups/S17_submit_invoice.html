@@ -9,7 +9,7 @@
   - Card footer with Cancel / Save for later / Next buttons (pill-shaped)
 
   Step 1 "Invoice details" is shown with line-items table, totals, and scope summary.
-  5 steps: Select file > Invoice details > Attachments > Extension (optional) > Review and submit
+  4 steps: Invoice details > Attachments > Extension (optional) > Review and submit
 
   Navy client info banner removed — file context is provided via read-only form
   fields at the top of step 1 (consistent with S09 pattern).
@@ -603,29 +603,17 @@
 
       <ol class="step-list">
 
-        <!-- Step 1: Select file (complete) -->
+        <!-- Step 1: Invoice details (current) -->
         <li class="step-item">
           <div class="step-bar">
             <div class="step-bar-top"></div>
-            <div class="step-indicator step-indicator--current" aria-label="Step 1 — complete" style="background:#0176D3; border-color:#0176D3;">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <div class="step-bar-bottom filled"></div>
-          </div>
-          <div class="step-label">Select file</div>
-        </li>
-
-        <!-- Step 2: Invoice details (current) -->
-        <li class="step-item">
-          <div class="step-bar">
-            <div class="step-bar-top filled"></div>
-            <div class="step-indicator step-indicator--current" aria-label="Step 2 — current"></div>
+            <div class="step-indicator step-indicator--current" aria-label="Step 1 — current"></div>
             <div class="step-bar-bottom filled"></div>
           </div>
           <div class="step-label">Invoice details</div>
         </li>
 
-        <!-- Step 3: Attachments -->
+        <!-- Step 2: Attachments -->
         <li class="step-item">
           <div class="step-bar">
             <div class="step-bar-top filled"></div>
@@ -635,7 +623,7 @@
           <div class="step-label">Attachments</div>
         </li>
 
-        <!-- Step 4: Extension (optional) -->
+        <!-- Step 3: Extension (optional) -->
         <li class="step-item">
           <div class="step-bar">
             <div class="step-bar-top filled"></div>
@@ -645,7 +633,7 @@
           <div class="step-label">Extension (optional)</div>
         </li>
 
-        <!-- Step 5: Review and submit -->
+        <!-- Step 4: Review and submit -->
         <li class="step-item">
           <div class="step-bar">
             <div class="step-bar-top filled"></div>
